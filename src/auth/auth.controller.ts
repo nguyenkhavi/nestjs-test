@@ -5,6 +5,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
+  RefreshTokenDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
@@ -67,5 +68,13 @@ export class AuthController {
   })
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Post('refresh-token')
+  @ApiOperation({
+    summary: 'Get new `accessToken` based on `refreshToken` provided',
+  })
+  refreshToken(@Body() body: RefreshTokenDto) {
+    return this.authService.refreshToken(body);
   }
 }

@@ -15,6 +15,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
+  RefreshTokenDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
@@ -88,7 +89,6 @@ export class AuthService {
   async register(body: UserRegisterDto) {
     // const user = this.prismaService.user.create();
     const { email, password } = body;
-    await this.prismaService.user.deleteMany();
     const existUserWithEmail = await this.prismaService.user.findUnique({
       where: { email },
     });
@@ -275,6 +275,31 @@ export class AuthService {
     if (!passwordMatching || !user) {
       throw new UnauthorizedException('Email or password is incorrect!');
     }
+    const data = await this.generateAuthorizedResponse(user);
+    return { data };
+  }
+
+  async refreshToken(body: RefreshTokenDto) {
+    const { refreshToken } = body;
+    const userToken = await this.prismaService.userToken.findFirst({
+      where: {
+        refreshToken,
+      },
+    });
+
+    const payload: JWTPayload = this.jwtService.verify(refreshToken, {
+      secret: this.configService.get('jwt.refreshSecret'),
+    });
+    if (!userToken || payload.uid !== userToken.userId) {
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: payload.uid,
+      },
+    });
+
     const data = await this.generateAuthorizedResponse(user);
     return { data };
   }

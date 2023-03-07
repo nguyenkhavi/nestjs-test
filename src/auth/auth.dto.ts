@@ -56,3 +56,10 @@ const Login = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter'),
 });
 export class LoginDto extends createZodDto(extendApi(Login)) {}
+
+const RefreshToken = z.object({
+  refreshToken: z.string({
+    required_error: 'Token is required',
+  }),
+});
+export class RefreshTokenDto extends createZodDto(extendApi(RefreshToken)) {}
