@@ -1,7 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Put } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ConfirmEmailDto,
+  ForgotPasswordDto,
+  PutPasswordDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
@@ -33,10 +35,26 @@ export class AuthController {
 
   @Post('resend-confirm-email')
   @ApiOperation({
-    summary: 'Confirm email',
+    summary: 'Resend confirm email',
     description: 'Confirm email after user signed up',
   })
   resendConfirmEmail(@Body() body: ResendConfirmEmailDto) {
     return this.authService.resendConfirmEmail(body);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Trigger send forgot-password email',
+  })
+  forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.forgotPassword(body);
+  }
+
+  @Put('put-password')
+  @ApiOperation({
+    summary: 'Set new password after forgot-password email sent',
+  })
+  putPassword(@Body() body: PutPasswordDto) {
+    return this.authService.putPassword(body);
   }
 }

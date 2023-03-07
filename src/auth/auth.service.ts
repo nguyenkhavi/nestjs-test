@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import {
   ConfirmEmailDto,
+  ForgotPasswordDto,
+  PutPasswordDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
@@ -20,6 +22,8 @@ import { JWTPayload } from 'src/auth/auth.interface';
 import { ConfigService } from 'src/config/config.service';
 import { Cache } from 'cache-manager';
 import {
+  MAX_CONFIRM_SENT_PER_DAY,
+  MAX_FORGOT_PASS_SENT_PER_DAY,
   _24H_MILLISECONDS_,
   _30MIN_MILLISECONDS_,
   _30_MILLISECOND_,
@@ -42,7 +46,7 @@ export class AuthService {
 
     const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
-    if (+sentCount >= 5 || recentlySent) {
+    if (+sentCount >= MAX_CONFIRM_SENT_PER_DAY || recentlySent) {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -73,7 +77,6 @@ export class AuthService {
         token,
         _30MIN_MILLISECONDS_,
       );
-      console.log({ token, sentCount, recentlySent });
     }
     return sentCount;
   }
@@ -113,9 +116,8 @@ export class AuthService {
     if (user.emailVerified) {
       throw new BadRequestException('Email is already confirmed');
     }
-    await this.sendConfirmEmail(id, user.email);
-
-    return { data: { id }, meta: { id } };
+    const sentCount = await this.sendConfirmEmail(id, user.email);
+    return { data: { id, sentCount }, meta: { id, sentCount } };
   }
 
   async confirmEmail(body: ConfirmEmailDto) {
@@ -138,6 +140,86 @@ export class AuthService {
       },
       data: {
         emailVerified: true,
+      },
+    });
+
+    return {};
+  }
+
+  async sendForgotPasswordEmail(uid: string, email: string) {
+    const CACHE_KEY = `forgot-sent:${uid}`;
+    const RECENTLY_SENT_KEY = `recently-forgot-sent:${uid}`;
+    const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
+
+    const sentCount: number = await this.cacheService.get(CACHE_KEY);
+    const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
+    if (+sentCount >= MAX_FORGOT_PASS_SENT_PER_DAY || recentlySent) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded.',
+        },
+        429,
+      );
+    } else {
+      const payload: JWTPayload = {
+        uid,
+      };
+      const token = this.jwtService.sign(payload, {
+        secret: this.configService.get('jwt.confirmSecret'),
+        expiresIn: this.configService.get('jwt.confirmExpires'),
+      });
+
+      // TODO: handle send mail
+
+      await this.cacheService.set(
+        CACHE_KEY,
+        (sentCount || 0) + 1,
+        _24H_MILLISECONDS_,
+      );
+      await this.cacheService.set(RECENTLY_SENT_KEY, token, _30_MILLISECOND_);
+      await this.cacheService.set(
+        LATEST_TOKEN_KEY,
+        token,
+        _30MIN_MILLISECONDS_,
+      );
+    }
+    return sentCount;
+  }
+  async forgotPassword(body: ForgotPasswordDto) {
+    const { id } = body;
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id,
+      },
+    });
+    const sentCount = await this.sendConfirmEmail(id, user.email);
+    return { data: { sentCount }, meta: { sentCount } };
+  }
+
+  async putPassword(body: PutPasswordDto) {
+    const { token, password } = body;
+
+    const payload: JWTPayload = this.jwtService.verify(token, {
+      secret: this.configService.get('jwt.confirmSecret'),
+    });
+    const { uid } = payload;
+    const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
+
+    const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+    if (latestToken !== token) {
+      throw new BadRequestException('Token is expired');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prismaService.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        password: hashedPassword,
       },
     });
 
