@@ -11,6 +11,7 @@ import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import { ErrorsInterceptor } from './interceptor/error.interceptor';
 import { TransformResponseInterceptor } from './interceptor/transform-response.interceptor';
+import { patchNestjsSwagger, ZodValidationPipe } from '@anatine/zod-nestjs';
 
 async function bootstrap() {
   const adapter = new FastifyAdapter({ logger: false });
@@ -47,6 +48,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new TransformResponseInterceptor());
   app.useGlobalInterceptors(new ErrorsInterceptor());
+  app.useGlobalPipes(new ZodValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('Web3asy API')
@@ -55,6 +57,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
+  patchNestjsSwagger();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
