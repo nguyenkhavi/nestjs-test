@@ -14,7 +14,7 @@ import { AuthModule } from 'src/auth/auth.module';
       isGlobal: true,
       load: appConfigs,
       envFilePath: ['.env'],
-      cache: true,
+      // cache: true,
     }),
     AppConfigModule,
     AuthModule,
