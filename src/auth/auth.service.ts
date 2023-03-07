@@ -8,10 +8,12 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ConfirmEmailDto,
   ForgotPasswordDto,
+  LoginDto,
   PutPasswordDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
@@ -28,6 +30,7 @@ import {
   _30MIN_MILLISECONDS_,
   _30_MILLISECOND_,
 } from 'src/utils/constants';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -77,6 +80,7 @@ export class AuthService {
         token,
         _30MIN_MILLISECONDS_,
       );
+      console.log(`sendConfirmEmail for ${email}: ${token}`);
     }
     return sentCount;
   }
@@ -88,21 +92,26 @@ export class AuthService {
     const existUserWithEmail = await this.prismaService.user.findUnique({
       where: { email },
     });
-    if (existUserWithEmail) {
+    if (existUserWithEmail && existUserWithEmail.emailVerified) {
       throw new ConflictException('Email is not available!');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const { id } = await this.prismaService.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-      },
-    });
+    let id = existUserWithEmail?.id;
+    if (!id) {
+      const createdUser = await this.prismaService.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+        },
+      });
+      id = createdUser.id;
+    }
+
     this.sendConfirmEmail(id, email);
     return { data: { id }, meta: { id } };
   }
@@ -224,5 +233,49 @@ export class AuthService {
     });
 
     return {};
+  }
+
+  private async generateAuthorizedResponse(user: User) {
+    const jwtPayload: JWTPayload = {
+      uid: user.id,
+    };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('jwt.accessSecret'),
+        expiresIn: this.configService.get('jwt.accessExpires'),
+      }),
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('jwt.refreshSecret'),
+        expiresIn: this.configService.get('jwt.refreshExpires'),
+      }),
+    ]);
+    await this.prismaService.userToken.create({
+      data: {
+        userId: user.id,
+        refreshToken,
+      },
+    });
+    const { password: _, ...userWithoutSensitive } = user;
+    return {
+      accessToken,
+      refreshToken,
+      data: userWithoutSensitive,
+    };
+  }
+
+  async login(body: LoginDto) {
+    const { email, password } = body;
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        email,
+        emailVerified: true,
+      },
+    });
+    const passwordMatching = await bcrypt.compare(password, user.password);
+    if (!passwordMatching || !user) {
+      throw new UnauthorizedException('Email or password is incorrect!');
+    }
+    const data = await this.generateAuthorizedResponse(user);
+    return { data };
   }
 }

@@ -45,3 +45,14 @@ const PutPassword = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter'),
 });
 export class PutPasswordDto extends createZodDto(extendApi(PutPassword)) {}
+
+const Login = z.object({
+  email: z.string().email('Email is invalid'),
+  mfaCode: z.string().optional(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter'),
+});
+export class LoginDto extends createZodDto(extendApi(Login)) {}

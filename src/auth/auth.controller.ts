@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ConfirmEmailDto,
   ForgotPasswordDto,
+  LoginDto,
   PutPasswordDto,
   ResendConfirmEmailDto,
   UserRegisterDto,
@@ -56,5 +57,15 @@ export class AuthController {
   })
   putPassword(@Body() body: PutPasswordDto) {
     return this.authService.putPassword(body);
+  }
+
+  @Post('login')
+  @ApiOperation({
+    summary: 'Login',
+    description:
+      'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  login(@Body() body: LoginDto) {
+    return this.authService.login(body);
   }
 }
