@@ -1,5 +1,10 @@
 import { Body, Controller, Post, Put } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   ConfirmEmailDto,
   ForgotPasswordDto,
@@ -65,6 +70,13 @@ export class AuthController {
     summary: 'Login',
     description:
       'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Client need to redirect to MFA Code page and submit both email, password and MFA Code again',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
   })
   login(@Body() body: LoginDto) {
     return this.authService.login(body);

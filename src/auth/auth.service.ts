@@ -4,6 +4,8 @@ import {
   BadRequestException,
   CACHE_MANAGER,
   ConflictException,
+  ForbiddenException,
+  forwardRef,
   HttpException,
   HttpStatus,
   Inject,
@@ -32,16 +34,29 @@ import {
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
 import { User } from '@prisma/client';
+import { MfaService } from 'src/mfa/mfa.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => MfaService))
+    private readonly mfaService: MfaService,
+
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER)
     private readonly cacheService: Cache,
   ) {}
+
+  async findOrThrow(id: string) {
+    return this.prismaService.user.findFirstOrThrow({
+      where: {
+        id,
+        emailVerified: true,
+      },
+    });
+  }
 
   async sendConfirmEmail(uid: string, email: string) {
     const CACHE_KEY = `confirm-sent:${uid}`;
@@ -255,7 +270,7 @@ export class AuthService {
         refreshToken,
       },
     });
-    const { password: _, ...userWithoutSensitive } = user;
+    const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
     return {
       accessToken,
       refreshToken,
@@ -264,7 +279,7 @@ export class AuthService {
   }
 
   async login(body: LoginDto) {
-    const { email, password } = body;
+    const { email, password, mfaCode } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
         email,
@@ -273,8 +288,22 @@ export class AuthService {
     });
     const passwordMatching = await bcrypt.compare(password, user.password);
     if (!passwordMatching || !user) {
-      throw new UnauthorizedException('Email or password is incorrect!');
+      throw new UnauthorizedException('Incorrect credential!');
     }
+
+    const mfaRequired = !!user.mfaSecret;
+    if (mfaRequired) {
+      if (!mfaCode) {
+        throw new ForbiddenException('MFA Required!');
+      } else {
+        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+
+        if (!mfaValid) {
+          throw new UnauthorizedException('Incorrect credential!');
+        }
+      }
+    }
+
     const data = await this.generateAuthorizedResponse(user);
     return { data };
   }
@@ -308,5 +337,37 @@ export class AuthService {
       },
     });
     return { data };
+  }
+
+  async mfaRequired(userId: string) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+    });
+
+    return !!user.mfaSecret;
+  }
+
+  enableMFA(userId: string, mfaSecret: string) {
+    return this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        mfaSecret,
+      },
+    });
+  }
+
+  disableMFA(userId: string) {
+    return this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        mfaSecret: null,
+      },
+    });
   }
 }

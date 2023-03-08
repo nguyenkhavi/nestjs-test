@@ -12,3 +12,7 @@ export const ZPassword = z.object({
       'Password must contain at least one special letter',
     ),
 });
+
+export const ZMFACode = z.object({
+  mfaCode: z.string().trim().length(6, 'MFA Code format is invalid').optional(),
+});

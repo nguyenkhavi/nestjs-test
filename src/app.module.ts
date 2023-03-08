@@ -7,6 +7,7 @@ import { appConfigs } from './config/config.service';
 import { AppConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { MfaModule } from './mfa/mfa.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthModule } from 'src/auth/auth.module';
     AppConfigModule,
     AuthModule,
     PrismaModule,
+    MfaModule,
   ],
 
   controllers: [AppController],

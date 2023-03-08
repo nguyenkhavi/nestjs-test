@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createZodDto } from '@anatine/zod-nestjs';
 import { extendApi } from '@anatine/zod-openapi';
-import { ZPassword } from 'src/utils/zod';
+import { ZMFACode, ZPassword } from 'src/utils/zod';
 
 const UserRegister = z
   .object({
@@ -44,9 +44,9 @@ export class PutPasswordDto extends createZodDto(extendApi(PutPassword)) {}
 const Login = z
   .object({
     email: z.string().email('Email is invalid'),
-    mfaCode: z.string().optional(),
   })
-  .merge(ZPassword);
+  .merge(ZPassword)
+  .merge(ZMFACode);
 export class LoginDto extends createZodDto(extendApi(Login)) {}
 
 const RefreshToken = z.object({
