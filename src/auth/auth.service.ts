@@ -294,7 +294,11 @@ export class AuthService {
     const mfaRequired = !!user.mfaSecret;
     if (mfaRequired) {
       if (!mfaCode) {
-        throw new ForbiddenException('MFA Required!');
+        return {
+          data: {
+            mfaRequired: true,
+          },
+        };
       } else {
         const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
 
