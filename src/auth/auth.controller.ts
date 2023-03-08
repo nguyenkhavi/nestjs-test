@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Put } from '@nestjs/common';
+import { Body, Controller, Ip, Post, Put } from '@nestjs/common';
 import {
   ApiForbiddenResponse,
   ApiOperation,
@@ -14,6 +14,8 @@ import {
   ResendConfirmEmailDto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
+import { Origin, UserAgent } from 'src/utils/decorators';
+import { IUserAgent } from 'src/utils/interface';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -27,8 +29,13 @@ export class AuthController {
     description:
       'Password must have at least 8 chars, contain both special letter, lowercase and uppercase',
   })
-  register(@Body() body: UserRegisterDto) {
-    return this.authService.register(body);
+  register(
+    @Body() body: UserRegisterDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.register(body, { ip, userAgent, origin });
   }
 
   @Post('confirm-email')
@@ -45,16 +52,26 @@ export class AuthController {
     summary: 'Resend confirm email',
     description: 'Confirm email after user signed up',
   })
-  resendConfirmEmail(@Body() body: ResendConfirmEmailDto) {
-    return this.authService.resendConfirmEmail(body);
+  resendConfirmEmail(
+    @Body() body: ResendConfirmEmailDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.resendConfirmEmail(body, { ip, userAgent, origin });
   }
 
   @Post('forgot-password')
   @ApiOperation({
     summary: 'Trigger send forgot-password email',
   })
-  forgotPassword(@Body() body: ForgotPasswordDto) {
-    return this.authService.forgotPassword(body);
+  forgotPassword(
+    @Body() body: ForgotPasswordDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.forgotPassword(body, { ip, userAgent, origin });
   }
 
   @Put('put-password')

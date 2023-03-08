@@ -26,7 +26,7 @@ export class ResendConfirmEmailDto extends createZodDto(
 ) {}
 
 const ForgotPassword = z.object({
-  id: z.string().uuid('User id is invalid'),
+  email: z.string().email('Email is invalid'),
 });
 export class ForgotPasswordDto extends createZodDto(
   extendApi(ForgotPassword),

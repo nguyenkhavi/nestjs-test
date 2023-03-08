@@ -4,7 +4,6 @@ import {
   BadRequestException,
   CACHE_MANAGER,
   ConflictException,
-  ForbiddenException,
   forwardRef,
   HttpException,
   HttpStatus,
@@ -23,7 +22,7 @@ import {
 } from 'src/auth/auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { JWTPayload } from 'src/auth/auth.interface';
+import { IRequestClient, JWTPayload } from 'src/auth/auth.interface';
 import { ConfigService } from 'src/config/config.service';
 import { Cache } from 'cache-manager';
 import {
@@ -35,11 +34,14 @@ import {
 } from 'src/utils/constants';
 import { User } from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
+import { MailService } from 'src/mail/mail.service';
+import { formatBrowser } from 'src/utils/fn';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly mainService: MailService,
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
     private readonly mfaService: MfaService,
@@ -58,7 +60,23 @@ export class AuthService {
     });
   }
 
-  async sendConfirmEmail(uid: string, email: string) {
+  private generateConfirmUrl(origin: string, token: string) {
+    return `${origin}/mail-handler/verify-email?token=${token}`;
+  }
+
+  private generateForgotPasswordUrl(origin: string, token: string) {
+    return `${origin}/mail-handler/forgot-password?token=${token}`;
+  }
+
+  // private generateResetPasswordUrl(origin: string, token: string) {
+  //   return `${origin}/reset-password?token=${token}`;
+  // }
+
+  async sendConfirmEmail(
+    uid: string,
+    email: string,
+    requestClient: IRequestClient,
+  ) {
     const CACHE_KEY = `confirm-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-token:${uid}`;
@@ -83,7 +101,20 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      // TODO: handle send mail
+      await this.mainService.sendConfirmEmail(
+        {
+          to: email,
+          from: 'huy.pham@spiritlabs.co',
+        },
+        {
+          urlVerifyEmail: this.generateConfirmUrl(requestClient.origin, token),
+          browser: formatBrowser(requestClient.userAgent),
+          ipAddress: requestClient.ip,
+          emailWasSentTo: email,
+          urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+          urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+        },
+      );
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -101,7 +132,7 @@ export class AuthService {
     return sentCount;
   }
 
-  async register(body: UserRegisterDto) {
+  async register(body: UserRegisterDto, requestClient: IRequestClient) {
     // const user = this.prismaService.user.create();
     const { email, password } = body;
     const existUserWithEmail = await this.prismaService.user.findUnique({
@@ -127,11 +158,14 @@ export class AuthService {
       id = createdUser.id;
     }
 
-    this.sendConfirmEmail(id, email);
+    this.sendConfirmEmail(id, email, requestClient);
     return { data: { id } };
   }
 
-  async resendConfirmEmail(body: ResendConfirmEmailDto) {
+  async resendConfirmEmail(
+    body: ResendConfirmEmailDto,
+    requestClient: IRequestClient,
+  ) {
     const { email } = body;
     const user = await this.prismaService.user.findUniqueOrThrow({
       where: { email },
@@ -140,7 +174,11 @@ export class AuthService {
     if (user.emailVerified) {
       throw new BadRequestException('Email is already confirmed');
     }
-    const sentCount = await this.sendConfirmEmail(user.id, user.email);
+    const sentCount = await this.sendConfirmEmail(
+      user.id,
+      user.email,
+      requestClient,
+    );
     return { data: { id: user.id, sentCount } };
   }
 
@@ -170,7 +208,11 @@ export class AuthService {
     return {};
   }
 
-  async sendForgotPasswordEmail(uid: string, email: string) {
+  async sendForgotPasswordEmail(
+    uid: string,
+    email: string,
+    requestClient: IRequestClient,
+  ) {
     const CACHE_KEY = `forgot-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-forgot-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
@@ -195,7 +237,23 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      // TODO: handle send mail
+      await this.mainService.sendForgotPasswordEmail(
+        {
+          to: email,
+          from: 'huy.pham@spiritlabs.co',
+        },
+        {
+          urlResetPassword: this.generateForgotPasswordUrl(
+            requestClient.origin,
+            token,
+          ),
+          browser: formatBrowser(requestClient.userAgent),
+          ipAddress: requestClient.ip,
+          emailWasSentTo: email,
+          urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+          urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+        },
+      );
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -211,14 +269,18 @@ export class AuthService {
     }
     return sentCount;
   }
-  async forgotPassword(body: ForgotPasswordDto) {
-    const { id } = body;
+  async forgotPassword(body: ForgotPasswordDto, requestClient: IRequestClient) {
+    const { email } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
-        id,
+        email,
       },
     });
-    const sentCount = await this.sendConfirmEmail(id, user.email);
+    const sentCount = await this.sendForgotPasswordEmail(
+      user.id,
+      user.email,
+      requestClient,
+    );
     return { data: { sentCount } };
   }
 
@@ -270,6 +332,7 @@ export class AuthService {
         refreshToken,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
     return {
       accessToken,
