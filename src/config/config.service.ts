@@ -31,9 +31,17 @@ export const appConfig = registerAs('app', () => ({
 export const sendgridConfig = registerAs('sendgrid', () => ({
   key: process.env.SEND_GRID_KEY,
 }));
+export const jwtConfig = registerAs('jwt', () => ({
+  confirmSecret: process.env.JWT_CONFIRM_SECRET,
+  confirmExpires: process.env.JWT_CONFIRM_EXPIRES,
+  accessSecret: process.env.JWT_ACCESS_SECRET,
+  accessExpires: process.env.JWT_ACCESS_EXPIRES,
+  refreshSecret: process.env.JWT_REFRESH_SECRET,
+  refreshExpires: process.env.JWT_REFRESH_EXPIRES,
+}));
 
-export const appConfigs = [appConfig, sendgridConfig];
+export const appConfigs = [appConfig, sendgridConfig, jwtConfig];
 
 export class ConfigService extends NestjsConfigService<
-  GetConfig<[typeof sendgridConfig, typeof appConfig]>
+  GetConfig<[typeof sendgridConfig, typeof appConfig, typeof jwtConfig]>
 > {}

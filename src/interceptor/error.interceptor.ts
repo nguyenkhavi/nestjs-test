@@ -5,6 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -17,6 +18,10 @@ export class ErrorsInterceptor implements NestInterceptor {
       catchError((err: any) => {
         if (BUILTIN_EXCEPTIONS.some((ins) => err instanceof ins)) {
           throw err;
+        }
+
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          return throwError(() => new NotFoundException(err.message));
         }
         return throwError(() => new BadRequestException(err.message));
       }),

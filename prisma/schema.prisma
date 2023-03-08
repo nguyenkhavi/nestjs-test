@@ -9,11 +9,22 @@ datasource db {
 }
 
 model User {
-  id        String   @unique @db.Uuid
-  email     String   @unique
-  password  String   @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String   @db.VarChar(255)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   @@map("user")
+}
+
+model UserToken {
+  id           String   @id @default(uuid())
+  userId       String   @db.Uuid
+  refreshToken String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("user-token")
 }

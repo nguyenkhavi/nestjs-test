@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { appConfigs } from './config/config.service';
 import { AppConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -13,9 +14,10 @@ import { PrismaModule } from './prisma/prisma.module';
       isGlobal: true,
       load: appConfigs,
       envFilePath: ['.env'],
-      cache: true,
+      // cache: true,
     }),
     AppConfigModule,
+    AuthModule,
     PrismaModule,
   ],
 
