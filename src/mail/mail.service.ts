@@ -20,7 +20,7 @@ export class MailService {
       ...mail,
     });
     // avoid this on production. use log instead :)
-    console.log(`E-Mail sent to ${mail.to}`, transport);
+    console.log(`E-Mail sent to ${mail.to}`);
     return transport;
   }
   async sendForgotPasswordEmail(
@@ -35,7 +35,7 @@ export class MailService {
       ...mail,
     });
     // avoid this on production. use log instead :)
-    console.log(`E-Mail sent to ${mail.to}`, transport);
+    console.log(`E-Mail sent to ${mail.to}`);
     return transport;
   }
 }
