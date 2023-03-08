@@ -20,7 +20,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Sign up/Register purpose',
     description:
-      'Password must have at least 8 chars, contain both lowercase and uppercase',
+      'Password must have at least 8 chars, contain both special letter, lowercase and uppercase',
   })
   register(@Body() body: UserRegisterDto) {
     return this.authService.register(body);

@@ -29,7 +29,7 @@ import {
   MAX_FORGOT_PASS_SENT_PER_DAY,
   _24H_MILLISECONDS_,
   _30MIN_MILLISECONDS_,
-  _30_MILLISECOND_,
+  _30S_MILLISECOND_,
 } from 'src/utils/constants';
 import { User } from '@prisma/client';
 
@@ -57,7 +57,7 @@ export class AuthService {
           error: 'Too Many Requests',
           message: 'Rate limit exceeded.',
         },
-        429,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     } else {
       const payload: JWTPayload = {
@@ -75,7 +75,7 @@ export class AuthService {
         (sentCount || 0) + 1,
         _24H_MILLISECONDS_,
       );
-      await this.cacheService.set(RECENTLY_SENT_KEY, token, _30_MILLISECOND_);
+      await this.cacheService.set(RECENTLY_SENT_KEY, token, _30S_MILLISECOND_);
       await this.cacheService.set(
         LATEST_TOKEN_KEY,
         token,
@@ -113,20 +113,20 @@ export class AuthService {
     }
 
     this.sendConfirmEmail(id, email);
-    return { data: { id }, meta: { id } };
+    return { data: { id } };
   }
 
   async resendConfirmEmail(body: ResendConfirmEmailDto) {
-    const { id } = body;
+    const { email } = body;
     const user = await this.prismaService.user.findUniqueOrThrow({
-      where: { id },
-      select: { email: true, emailVerified: true },
+      where: { email },
+      select: { email: true, emailVerified: true, id: true },
     });
     if (user.emailVerified) {
       throw new BadRequestException('Email is already confirmed');
     }
-    const sentCount = await this.sendConfirmEmail(id, user.email);
-    return { data: { id, sentCount }, meta: { id, sentCount } };
+    const sentCount = await this.sendConfirmEmail(user.id, user.email);
+    return { data: { id: user.id, sentCount } };
   }
 
   async confirmEmail(body: ConfirmEmailDto) {
@@ -169,7 +169,7 @@ export class AuthService {
           error: 'Too Many Requests',
           message: 'Rate limit exceeded.',
         },
-        429,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     } else {
       const payload: JWTPayload = {
@@ -187,7 +187,7 @@ export class AuthService {
         (sentCount || 0) + 1,
         _24H_MILLISECONDS_,
       );
-      await this.cacheService.set(RECENTLY_SENT_KEY, token, _30_MILLISECOND_);
+      await this.cacheService.set(RECENTLY_SENT_KEY, token, _30S_MILLISECOND_);
       await this.cacheService.set(
         LATEST_TOKEN_KEY,
         token,
@@ -204,7 +204,7 @@ export class AuthService {
       },
     });
     const sentCount = await this.sendConfirmEmail(id, user.email);
-    return { data: { sentCount }, meta: { sentCount } };
+    return { data: { sentCount } };
   }
 
   async putPassword(body: PutPasswordDto) {
@@ -281,7 +281,8 @@ export class AuthService {
 
   async refreshToken(body: RefreshTokenDto) {
     const { refreshToken } = body;
-    const userToken = await this.prismaService.userToken.findFirst({
+
+    const userToken = await this.prismaService.userToken.findFirstOrThrow({
       where: {
         refreshToken,
       },
@@ -294,13 +295,18 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const user = await this.prismaService.user.findUnique({
+    const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
         id: payload.uid,
       },
     });
 
     const data = await this.generateAuthorizedResponse(user);
+    this.prismaService.userToken.delete({
+      where: {
+        id: userToken.id,
+      },
+    });
     return { data };
   }
 }
