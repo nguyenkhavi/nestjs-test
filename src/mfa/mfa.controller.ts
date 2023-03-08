@@ -37,8 +37,8 @@ export class MfaController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'MFA - Verify',
-    description: 'The code generated will be expired for 30 mins',
+    summary: 'MFA - Turn-off',
+    description: 'Disabled Google Authenticator MFA',
   })
   disable(@Request() request) {
     const uid = request.user.uid;
