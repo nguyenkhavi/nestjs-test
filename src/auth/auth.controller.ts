@@ -1,11 +1,10 @@
 import {
   Body,
   Controller,
-  Head,
+  Get,
   Ip,
   Post,
   Put,
-  Response,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -36,12 +35,15 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Head('verify')
+  @Get('verify')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async verifyToken(@Response() response, @Uid() uid: string) {
-    await response.append('uid', uid);
-    await response.sendStatus(200);
+  verifyToken(@Uid() uid: string) {
+    return {
+      data: {
+        uid,
+      },
+    };
   }
 
   @Post('register')
