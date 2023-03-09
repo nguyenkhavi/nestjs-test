@@ -34,8 +34,8 @@ export class SsoService {
     return {
       id: data.sub,
       email: data.email,
-      firstName: data.given_name,
-      lastName: data.family_name,
+      name: data.name,
+      avatar: data.picture,
     };
   }
 
@@ -44,14 +44,14 @@ export class SsoService {
 
     this.fb.setAccessToken(token);
     const data: ISocialProfile = await this.fb.api('/me', 'get', {
-      fields: 'id,last_name,email,first_name',
+      fields: 'id,name,email',
     });
 
     return {
       id: data.id,
       email: data.email,
-      firstName: data.first_name,
-      lastName: data.last_name,
+      name: data.name,
+      avatar: `https://graph.facebook.com/${data.id}/picture?type=normal`,
     };
   }
 }

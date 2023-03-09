@@ -31,3 +31,15 @@ model UserToken {
 
   @@map("user-token")
 }
+
+model UserProfile {
+  id           String   @id @default(uuid())
+  userId       String   @db.Uuid @unique
+  name         String   @db.VarChar(255) @default("")
+  avatar       String   @db.VarChar(255) @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("user-profile")
+}
+

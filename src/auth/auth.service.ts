@@ -40,6 +40,7 @@ import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
 import { formatBrowser } from 'src/utils/fn';
 import { SsoService } from 'src/sso/sso.service';
+import { UserProfileService } from 'src/user-profile/user-profile.service';
 
 @Injectable()
 export class AuthService {
@@ -50,6 +51,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
     private readonly mfaService: MfaService,
+    @Inject(forwardRef(() => UserProfileService))
+    private readonly userProfileService: UserProfileService,
 
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER)
@@ -138,7 +141,6 @@ export class AuthService {
   }
 
   async register(body: UserRegisterDto, requestClient: IRequestClient) {
-    // const user = this.prismaService.user.create();
     const { email, password } = body;
     const existUserWithEmail = await this.prismaService.user.findFirst({
       where: {
@@ -164,6 +166,7 @@ export class AuthService {
           id: true,
         },
       });
+      await this.userProfileService.createDefaultProfile(id);
       id = createdUser.id;
     }
 
@@ -467,6 +470,11 @@ export class AuthService {
           googleUid,
         },
       });
+      await this.userProfileService.createDefaultProfile(
+        user.id,
+        profile.name,
+        profile.avatar,
+      );
     }
 
     const data = await this.generateAuthorizedResponse(user);
@@ -523,6 +531,11 @@ export class AuthService {
           facebookUid,
         },
       });
+      await this.userProfileService.createDefaultProfile(
+        user.id,
+        profile.name,
+        profile.avatar,
+      );
     }
 
     const data = await this.generateAuthorizedResponse(user);
@@ -621,5 +634,20 @@ export class AuthService {
       });
     }
     return { data: { success: true } };
+  }
+
+  async getUserWithoutSensitive(id: string) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id,
+      },
+    });
+    const mfaRequired = !!user.mfaSecret;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
+    return {
+      ...userWithoutSensitive,
+      mfaRequired,
+    };
   }
 }
