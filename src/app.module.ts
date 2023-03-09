@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { MfaModule } from './mfa/mfa.module';
 import { MailModule } from './mail/mail.module';
+import { SsoModule } from './sso/sso.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MailModule } from './mail/mail.module';
     PrismaModule,
     MfaModule,
     MailModule,
+    SsoModule,
   ],
 
   controllers: [AppController],

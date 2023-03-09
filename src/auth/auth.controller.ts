@@ -1,6 +1,5 @@
 import { Body, Controller, Ip, Post, Put } from '@nestjs/common';
 import {
-  ApiForbiddenResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -12,6 +11,7 @@ import {
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SSODto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
 import { Origin, UserAgent } from 'src/utils/decorators';
@@ -88,15 +88,37 @@ export class AuthController {
     description:
       'Field `mfaCode` is required in case user enabled Google Authenticator',
   })
-  @ApiForbiddenResponse({
-    description:
-      'Client need to redirect to MFA Code page and submit both email, password and MFA Code again',
-  })
   @ApiUnauthorizedResponse({
     description: 'Credential provided is invalid',
   })
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Post('sso/google')
+  @ApiOperation({
+    summary: 'Google SSO',
+    description:
+      'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
+  })
+  ssoGoogle(@Body() body: SSODto) {
+    return this.authService.ssoGoogle(body);
+  }
+
+  @Post('sso/facebook')
+  @ApiOperation({
+    summary: 'Facebook SSO',
+    description:
+      'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
+  })
+  ssoFacebook(@Body() body: SSODto) {
+    return this.authService.ssoFacebook(body);
   }
 
   @Post('refresh-token')

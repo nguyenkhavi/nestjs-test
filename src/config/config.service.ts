@@ -45,8 +45,32 @@ export const jwtConfig = registerAs('jwt', () => ({
   refreshExpires: process.env.JWT_REFRESH_EXPIRES,
 }));
 
-export const appConfigs = [appConfig, sendgridConfig, jwtConfig];
+export const googleConfig = registerAs('google', () => ({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+}));
+
+export const facebookConfig = registerAs('facebook', () => ({
+  appId: process.env.FB_APP_ID,
+  appSecret: process.env.FB_APP_SECRET,
+}));
+
+export const appConfigs = [
+  appConfig,
+  sendgridConfig,
+  jwtConfig,
+  googleConfig,
+  facebookConfig,
+];
 
 export class ConfigService extends NestjsConfigService<
-  GetConfig<[typeof sendgridConfig, typeof appConfig, typeof jwtConfig]>
+  GetConfig<
+    [
+      typeof sendgridConfig,
+      typeof appConfig,
+      typeof jwtConfig,
+      typeof googleConfig,
+      typeof facebookConfig,
+    ]
+  >
 > {}

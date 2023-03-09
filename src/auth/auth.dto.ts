@@ -55,3 +55,12 @@ const RefreshToken = z.object({
   }),
 });
 export class RefreshTokenDto extends createZodDto(extendApi(RefreshToken)) {}
+
+const SSO = z
+  .object({
+    idToken: z.string({
+      required_error: 'Token is required',
+    }),
+  })
+  .merge(ZMFACode);
+export class SSODto extends createZodDto(extendApi(SSO)) {}

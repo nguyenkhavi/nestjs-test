@@ -4,6 +4,7 @@ import { JwtStrategy } from 'src/auth/jwt/jwt.strategy';
 import { MailModule } from 'src/mail/mail.module';
 import { MfaModule } from 'src/mfa/mfa.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { SsoModule } from 'src/sso/sso.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -12,6 +13,7 @@ import { AuthService } from './auth.service';
     PrismaModule,
     JwtModule,
     MailModule,
+    SsoModule,
     CacheModule.register(),
     forwardRef(() => MfaModule),
   ],

@@ -18,6 +18,7 @@ import {
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SSODto,
   UserRegisterDto,
 } from 'src/auth/auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -36,12 +37,14 @@ import { User } from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
 import { formatBrowser } from 'src/utils/fn';
+import { SsoService } from 'src/sso/sso.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly mainService: MailService,
+    private readonly mailService: MailService,
+    private readonly ssoService: SsoService,
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
     private readonly mfaService: MfaService,
@@ -101,7 +104,7 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mainService.sendConfirmEmail(
+      await this.mailService.sendConfirmEmail(
         {
           to: email,
           from: 'huy.pham@spiritlabs.co',
@@ -135,8 +138,12 @@ export class AuthService {
   async register(body: UserRegisterDto, requestClient: IRequestClient) {
     // const user = this.prismaService.user.create();
     const { email, password } = body;
-    const existUserWithEmail = await this.prismaService.user.findUnique({
-      where: { email },
+    const existUserWithEmail = await this.prismaService.user.findFirst({
+      where: {
+        email,
+        googleUid: null,
+        facebookUid: null,
+      },
     });
     if (existUserWithEmail && existUserWithEmail.emailVerified) {
       throw new ConflictException('Email is not available!');
@@ -167,8 +174,8 @@ export class AuthService {
     requestClient: IRequestClient,
   ) {
     const { email } = body;
-    const user = await this.prismaService.user.findUniqueOrThrow({
-      where: { email },
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: { email, googleUid: null, facebookUid: null },
       select: { email: true, emailVerified: true, id: true },
     });
     if (user.emailVerified) {
@@ -237,7 +244,7 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mainService.sendForgotPasswordEmail(
+      await this.mailService.sendForgotPasswordEmail(
         {
           to: email,
           from: 'huy.pham@spiritlabs.co',
@@ -274,6 +281,8 @@ export class AuthService {
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
         email,
+        googleUid: null,
+        facebookUid: null,
       },
     });
     const sentCount = await this.sendForgotPasswordEmail(
@@ -403,6 +412,110 @@ export class AuthService {
         id: userToken.id,
       },
     });
+    return { data };
+  }
+
+  async ssoGoogle(body: SSODto) {
+    const { mfaCode } = body;
+    const profile = await this.ssoService.getGoogleProfile(body);
+
+    const { id: googleUid, email } = profile;
+
+    let user = await this.prismaService.user.findFirst({
+      where: {
+        googleUid,
+      },
+    });
+
+    if (user) {
+      const mfaRequired = !!user.mfaSecret;
+      if (mfaRequired) {
+        if (!mfaCode) {
+          return {
+            data: {
+              mfaRequired: true,
+            },
+          };
+        } else {
+          const mfaValid = this.mfaService.mfaCodeValid(
+            mfaCode,
+            user.mfaSecret,
+          );
+
+          if (!mfaValid) {
+            throw new UnauthorizedException('Incorrect credential!');
+          }
+        }
+      }
+    } else {
+      const hashedPassword = await bcrypt.hash(
+        Math.ceil(Math.random() * 1000000),
+        10,
+      );
+
+      user = await this.prismaService.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          emailVerified: true,
+          googleUid,
+        },
+      });
+    }
+
+    const data = await this.generateAuthorizedResponse(user);
+    return { data };
+  }
+
+  async ssoFacebook(body: SSODto) {
+    const { mfaCode } = body;
+    const profile = await this.ssoService.getFacebookProfile(body);
+
+    const { id: facebookUid, email } = profile;
+
+    let user = await this.prismaService.user.findFirst({
+      where: {
+        facebookUid,
+      },
+    });
+
+    if (user) {
+      const mfaRequired = !!user.mfaSecret;
+      if (mfaRequired) {
+        if (!mfaCode) {
+          return {
+            data: {
+              mfaRequired: true,
+            },
+          };
+        } else {
+          const mfaValid = this.mfaService.mfaCodeValid(
+            mfaCode,
+            user.mfaSecret,
+          );
+
+          if (!mfaValid) {
+            throw new UnauthorizedException('Incorrect credential!');
+          }
+        }
+      }
+    } else {
+      const hashedPassword = await bcrypt.hash(
+        Math.ceil(Math.random() * 1000000),
+        10,
+      );
+
+      user = await this.prismaService.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          emailVerified: false,
+          facebookUid,
+        },
+      });
+    }
+
+    const data = await this.generateAuthorizedResponse(user);
     return { data };
   }
 
