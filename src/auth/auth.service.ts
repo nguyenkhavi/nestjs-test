@@ -419,6 +419,10 @@ export class AuthService {
     const { mfaCode } = body;
     const profile = await this.ssoService.getGoogleProfile(body);
 
+    if (!profile) {
+      throw new BadRequestException('Cannot verify account from SSO Provider');
+    }
+
     const { id: googleUid, email } = profile;
 
     let user = await this.prismaService.user.findFirst({
@@ -471,6 +475,10 @@ export class AuthService {
     const { mfaCode } = body;
     const profile = await this.ssoService.getFacebookProfile(body);
 
+    if (!profile) {
+      throw new BadRequestException('Cannot verify account from SSO Provider');
+    }
+
     const { id: facebookUid, email } = profile;
 
     let user = await this.prismaService.user.findFirst({
@@ -478,6 +486,8 @@ export class AuthService {
         facebookUid,
       },
     });
+
+    console.log({ user });
 
     if (user) {
       const mfaRequired = !!user.mfaSecret;

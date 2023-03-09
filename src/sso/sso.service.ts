@@ -41,18 +41,13 @@ export class SsoService {
 
   async getFacebookProfile(body: SSODto) {
     const { idToken } = body;
+    console.log({ idToken });
 
     this.fb.setAccessToken(idToken);
-    const data: ISocialProfile = await new Promise((resolve) => {
-      this.fb.api(
-        '/me',
-        'get',
-        { fields: 'id,last_name,email,first_name' },
-        (response) => {
-          resolve(response);
-        },
-      );
+    const data: ISocialProfile = await this.fb.api('/me', 'get', {
+      fields: 'id,last_name,email,first_name',
     });
+
     return {
       id: data.id,
       email: data.email,
