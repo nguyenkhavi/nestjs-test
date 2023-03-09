@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createZodDto } from '@anatine/zod-nestjs';
 import { extendApi } from '@anatine/zod-openapi';
-import { ZPassword } from 'src/utils/zod';
+import { ZMFACode, ZPassword } from 'src/utils/zod';
 
 const UserRegister = z
   .object({
@@ -26,7 +26,7 @@ export class ResendConfirmEmailDto extends createZodDto(
 ) {}
 
 const ForgotPassword = z.object({
-  id: z.string().uuid('User id is invalid'),
+  email: z.string().email('Email is invalid'),
 });
 export class ForgotPasswordDto extends createZodDto(
   extendApi(ForgotPassword),
@@ -41,12 +41,27 @@ const PutPassword = z
   .merge(ZPassword);
 export class PutPasswordDto extends createZodDto(extendApi(PutPassword)) {}
 
+const VerifyPassword = z.object({}).merge(ZPassword).merge(ZMFACode);
+export class VerifyPasswordDto extends createZodDto(
+  extendApi(VerifyPassword),
+) {}
+
+const ChangePassword = z
+  .object({
+    newPassword: ZPassword.pick({ password: true }),
+  })
+  .merge(ZPassword)
+  .merge(ZMFACode);
+export class ChangePasswordDto extends createZodDto(
+  extendApi(ChangePassword),
+) {}
+
 const Login = z
   .object({
     email: z.string().email('Email is invalid'),
-    mfaCode: z.string().optional(),
   })
-  .merge(ZPassword);
+  .merge(ZPassword)
+  .merge(ZMFACode);
 export class LoginDto extends createZodDto(extendApi(Login)) {}
 
 const RefreshToken = z.object({
@@ -55,3 +70,12 @@ const RefreshToken = z.object({
   }),
 });
 export class RefreshTokenDto extends createZodDto(extendApi(RefreshToken)) {}
+
+const SSO = z
+  .object({
+    token: z.string({
+      required_error: 'Token is required',
+    }),
+  })
+  .merge(ZMFACode);
+export class SSODto extends createZodDto(extendApi(SSO)) {}

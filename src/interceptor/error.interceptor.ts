@@ -4,12 +4,19 @@ import {
   CallHandler,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-const BUILTIN_EXCEPTIONS = [NotFoundException, BadRequestException];
+const BUILTIN_EXCEPTIONS = [
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+];
 
 @Injectable()
 export class ErrorsInterceptor implements NestInterceptor {

@@ -1,14 +1,33 @@
-import { Body, Controller, Post, Put } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
+  Body,
+  Controller,
+  Get,
+  Ip,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import {
+  ChangePasswordDto,
   ConfirmEmailDto,
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SSODto,
   UserRegisterDto,
+  VerifyPasswordDto,
 } from 'src/auth/auth.dto';
+import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { Origin, Uid, UserAgent } from 'src/utils/decorators';
+import { IUserAgent } from 'src/utils/interface';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -16,14 +35,30 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Get('verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  verifyToken(@Uid() uid: string) {
+    return {
+      data: {
+        uid,
+      },
+    };
+  }
+
   @Post('register')
   @ApiOperation({
     summary: 'Sign up/Register purpose',
     description:
       'Password must have at least 8 chars, contain both special letter, lowercase and uppercase',
   })
-  register(@Body() body: UserRegisterDto) {
-    return this.authService.register(body);
+  register(
+    @Body() body: UserRegisterDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.register(body, { ip, userAgent, origin });
   }
 
   @Post('confirm-email')
@@ -40,16 +75,26 @@ export class AuthController {
     summary: 'Resend confirm email',
     description: 'Confirm email after user signed up',
   })
-  resendConfirmEmail(@Body() body: ResendConfirmEmailDto) {
-    return this.authService.resendConfirmEmail(body);
+  resendConfirmEmail(
+    @Body() body: ResendConfirmEmailDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.resendConfirmEmail(body, { ip, userAgent, origin });
   }
 
   @Post('forgot-password')
   @ApiOperation({
     summary: 'Trigger send forgot-password email',
   })
-  forgotPassword(@Body() body: ForgotPasswordDto) {
-    return this.authService.forgotPassword(body);
+  forgotPassword(
+    @Body() body: ForgotPasswordDto,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.forgotPassword(body, { ip, userAgent, origin });
   }
 
   @Put('put-password')
@@ -60,14 +105,63 @@ export class AuthController {
     return this.authService.putPassword(body);
   }
 
+  @Post('verify-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Verify password',
+  })
+  verifyPassword(@Body() body: VerifyPasswordDto, @Uid() uid: string) {
+    return this.authService.verifyPassword(uid, body);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change password',
+  })
+  changePassword(@Body() body: ChangePasswordDto, @Uid() uid: string) {
+    return this.authService.changePassword(uid, body);
+  }
+
   @Post('login')
   @ApiOperation({
     summary: 'Login',
     description:
       'Field `mfaCode` is required in case user enabled Google Authenticator',
   })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
+  })
   login(@Body() body: LoginDto) {
     return this.authService.login(body);
+  }
+
+  @Post('sso/google')
+  @ApiOperation({
+    summary: 'Google SSO',
+    description:
+      'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
+  })
+  ssoGoogle(@Body() body: SSODto) {
+    return this.authService.ssoGoogle(body);
+  }
+
+  @Post('sso/facebook')
+  @ApiOperation({
+    summary: 'Facebook SSO',
+    description:
+      'Field `mfaCode` is required in case user enabled Google Authenticator',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Credential provided is invalid',
+  })
+  ssoFacebook(@Body() body: SSODto) {
+    return this.authService.ssoFacebook(body);
   }
 
   @Post('refresh-token')

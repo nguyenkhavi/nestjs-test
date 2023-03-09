@@ -10,9 +10,12 @@ datasource db {
 
 model User {
   id            String   @id @default(uuid())
-  email         String   @unique
+  email         String?  @db.VarChar(255)
   password      String   @db.VarChar(255)
+  mfaSecret     String?  @db.VarChar(255)
   emailVerified Boolean  @default(false)
+  googleUid     String?  @db.VarChar(255) 
+  facebookUid   String?  @db.VarChar(255)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -28,3 +31,15 @@ model UserToken {
 
   @@map("user-token")
 }
+
+model UserProfile {
+  id           String   @id @default(uuid())
+  userId       String   @db.Uuid @unique
+  name         String   @db.VarChar(255) @default("")
+  avatar       String   @db.VarChar(255) @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("user-profile")
+}
+

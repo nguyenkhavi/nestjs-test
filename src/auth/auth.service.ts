@@ -4,6 +4,7 @@ import {
   BadRequestException,
   CACHE_MANAGER,
   ConflictException,
+  forwardRef,
   HttpException,
   HttpStatus,
   Inject,
@@ -11,17 +12,20 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
+  ChangePasswordDto,
   ConfirmEmailDto,
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SSODto,
   UserRegisterDto,
+  VerifyPasswordDto,
 } from 'src/auth/auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { JWTPayload } from 'src/auth/auth.interface';
+import { IRequestClient, JWTPayload } from 'src/auth/auth.interface';
 import { ConfigService } from 'src/config/config.service';
 import { Cache } from 'cache-manager';
 import {
@@ -32,18 +36,55 @@ import {
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
 import { User } from '@prisma/client';
+import { MfaService } from 'src/mfa/mfa.service';
+import { MailService } from 'src/mail/mail.service';
+import { formatBrowser } from 'src/utils/fn';
+import { SsoService } from 'src/sso/sso.service';
+import { UserProfileService } from 'src/user-profile/user-profile.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly mailService: MailService,
+    private readonly ssoService: SsoService,
     private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => MfaService))
+    private readonly mfaService: MfaService,
+    @Inject(forwardRef(() => UserProfileService))
+    private readonly userProfileService: UserProfileService,
+
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER)
     private readonly cacheService: Cache,
   ) {}
 
-  async sendConfirmEmail(uid: string, email: string) {
+  async findOrThrow(id: string) {
+    return this.prismaService.user.findFirstOrThrow({
+      where: {
+        id,
+        emailVerified: true,
+      },
+    });
+  }
+
+  private generateConfirmUrl(origin: string, token: string) {
+    return `${origin}/mail-handler/verify-email?token=${token}`;
+  }
+
+  private generateForgotPasswordUrl(origin: string, token: string) {
+    return `${origin}/mail-handler/forgot-password?token=${token}`;
+  }
+
+  // private generateResetPasswordUrl(origin: string, token: string) {
+  //   return `${origin}/reset-password?token=${token}`;
+  // }
+
+  async sendConfirmEmail(
+    uid: string,
+    email: string,
+    requestClient: IRequestClient,
+  ) {
     const CACHE_KEY = `confirm-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-token:${uid}`;
@@ -68,7 +109,20 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      // TODO: handle send mail
+      await this.mailService.sendConfirmEmail(
+        {
+          to: email,
+          from: 'huy.pham@spiritlabs.co',
+        },
+        {
+          urlVerifyEmail: this.generateConfirmUrl(requestClient.origin, token),
+          browser: formatBrowser(requestClient.userAgent),
+          ipAddress: requestClient.ip,
+          emailWasSentTo: email,
+          urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+          urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+        },
+      );
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -86,11 +140,14 @@ export class AuthService {
     return sentCount;
   }
 
-  async register(body: UserRegisterDto) {
-    // const user = this.prismaService.user.create();
+  async register(body: UserRegisterDto, requestClient: IRequestClient) {
     const { email, password } = body;
-    const existUserWithEmail = await this.prismaService.user.findUnique({
-      where: { email },
+    const existUserWithEmail = await this.prismaService.user.findFirst({
+      where: {
+        email,
+        googleUid: null,
+        facebookUid: null,
+      },
     });
     if (existUserWithEmail && existUserWithEmail.emailVerified) {
       throw new ConflictException('Email is not available!');
@@ -109,23 +166,31 @@ export class AuthService {
           id: true,
         },
       });
+      await this.userProfileService.createDefaultProfile(id);
       id = createdUser.id;
     }
 
-    this.sendConfirmEmail(id, email);
+    this.sendConfirmEmail(id, email, requestClient);
     return { data: { id } };
   }
 
-  async resendConfirmEmail(body: ResendConfirmEmailDto) {
+  async resendConfirmEmail(
+    body: ResendConfirmEmailDto,
+    requestClient: IRequestClient,
+  ) {
     const { email } = body;
-    const user = await this.prismaService.user.findUniqueOrThrow({
-      where: { email },
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: { email, googleUid: null, facebookUid: null },
       select: { email: true, emailVerified: true, id: true },
     });
     if (user.emailVerified) {
       throw new BadRequestException('Email is already confirmed');
     }
-    const sentCount = await this.sendConfirmEmail(user.id, user.email);
+    const sentCount = await this.sendConfirmEmail(
+      user.id,
+      user.email,
+      requestClient,
+    );
     return { data: { id: user.id, sentCount } };
   }
 
@@ -155,7 +220,11 @@ export class AuthService {
     return {};
   }
 
-  async sendForgotPasswordEmail(uid: string, email: string) {
+  async sendForgotPasswordEmail(
+    uid: string,
+    email: string,
+    requestClient: IRequestClient,
+  ) {
     const CACHE_KEY = `forgot-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-forgot-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
@@ -180,7 +249,23 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      // TODO: handle send mail
+      await this.mailService.sendForgotPasswordEmail(
+        {
+          to: email,
+          from: 'huy.pham@spiritlabs.co',
+        },
+        {
+          urlResetPassword: this.generateForgotPasswordUrl(
+            requestClient.origin,
+            token,
+          ),
+          browser: formatBrowser(requestClient.userAgent),
+          ipAddress: requestClient.ip,
+          emailWasSentTo: email,
+          urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+          urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+        },
+      );
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -196,14 +281,20 @@ export class AuthService {
     }
     return sentCount;
   }
-  async forgotPassword(body: ForgotPasswordDto) {
-    const { id } = body;
+  async forgotPassword(body: ForgotPasswordDto, requestClient: IRequestClient) {
+    const { email } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
-        id,
+        email,
+        googleUid: null,
+        facebookUid: null,
       },
     });
-    const sentCount = await this.sendConfirmEmail(id, user.email);
+    const sentCount = await this.sendForgotPasswordEmail(
+      user.id,
+      user.email,
+      requestClient,
+    );
     return { data: { sentCount } };
   }
 
@@ -255,7 +346,8 @@ export class AuthService {
         refreshToken,
       },
     });
-    const { password: _, ...userWithoutSensitive } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
     return {
       accessToken,
       refreshToken,
@@ -264,7 +356,7 @@ export class AuthService {
   }
 
   async login(body: LoginDto) {
-    const { email, password } = body;
+    const { email, password, mfaCode } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
         email,
@@ -273,8 +365,26 @@ export class AuthService {
     });
     const passwordMatching = await bcrypt.compare(password, user.password);
     if (!passwordMatching || !user) {
-      throw new UnauthorizedException('Email or password is incorrect!');
+      throw new UnauthorizedException('Incorrect credential!');
     }
+
+    const mfaRequired = !!user.mfaSecret;
+    if (mfaRequired) {
+      if (!mfaCode) {
+        return {
+          data: {
+            mfaRequired: true,
+          },
+        };
+      } else {
+        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+
+        if (!mfaValid) {
+          throw new UnauthorizedException('Incorrect credential!');
+        }
+      }
+    }
+
     const data = await this.generateAuthorizedResponse(user);
     return { data };
   }
@@ -308,5 +418,236 @@ export class AuthService {
       },
     });
     return { data };
+  }
+
+  async ssoGoogle(body: SSODto) {
+    const { mfaCode } = body;
+    const profile = await this.ssoService.getGoogleProfile(body);
+
+    if (!profile) {
+      throw new BadRequestException('Cannot verify account from SSO Provider');
+    }
+
+    const { id: googleUid, email } = profile;
+
+    let user = await this.prismaService.user.findFirst({
+      where: {
+        googleUid,
+      },
+    });
+
+    if (user) {
+      const mfaRequired = !!user.mfaSecret;
+      if (mfaRequired) {
+        if (!mfaCode) {
+          return {
+            data: {
+              mfaRequired: true,
+            },
+          };
+        } else {
+          const mfaValid = this.mfaService.mfaCodeValid(
+            mfaCode,
+            user.mfaSecret,
+          );
+
+          if (!mfaValid) {
+            throw new UnauthorizedException('Incorrect credential!');
+          }
+        }
+      }
+    } else {
+      const hashedPassword = await bcrypt.hash(
+        Math.ceil(Math.random() * 1000000).toString(),
+        10,
+      );
+
+      user = await this.prismaService.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          emailVerified: true,
+          googleUid,
+        },
+      });
+      await this.userProfileService.createDefaultProfile(
+        user.id,
+        profile.name,
+        profile.avatar,
+      );
+    }
+
+    const data = await this.generateAuthorizedResponse(user);
+    return { data };
+  }
+
+  async ssoFacebook(body: SSODto) {
+    const { mfaCode } = body;
+    const profile = await this.ssoService.getFacebookProfile(body);
+
+    if (!profile) {
+      throw new BadRequestException('Cannot verify account from SSO Provider');
+    }
+
+    const { id: facebookUid, email } = profile;
+
+    let user = await this.prismaService.user.findFirst({
+      where: {
+        facebookUid,
+      },
+    });
+
+    if (user) {
+      const mfaRequired = !!user.mfaSecret;
+      if (mfaRequired) {
+        if (!mfaCode) {
+          return {
+            data: {
+              mfaRequired: true,
+            },
+          };
+        } else {
+          const mfaValid = this.mfaService.mfaCodeValid(
+            mfaCode,
+            user.mfaSecret,
+          );
+
+          if (!mfaValid) {
+            throw new UnauthorizedException('Incorrect credential!');
+          }
+        }
+      }
+    } else {
+      const hashedPassword = await bcrypt.hash(
+        Math.ceil(Math.random() * 1000000).toString(),
+        10,
+      );
+
+      user = await this.prismaService.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          emailVerified: false,
+          facebookUid,
+        },
+      });
+      await this.userProfileService.createDefaultProfile(
+        user.id,
+        profile.name,
+        profile.avatar,
+      );
+    }
+
+    const data = await this.generateAuthorizedResponse(user);
+    return { data };
+  }
+
+  async mfaRequired(userId: string) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+    });
+
+    return !!user.mfaSecret;
+  }
+
+  enableMFA(userId: string, mfaSecret: string) {
+    return this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        mfaSecret,
+      },
+    });
+  }
+
+  disableMFA(userId: string) {
+    return this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        mfaSecret: null,
+      },
+    });
+  }
+
+  async verifyPassword(uid: string, body: VerifyPasswordDto) {
+    const { mfaCode, password } = body;
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id: uid,
+        googleUid: null,
+        facebookUid: null,
+      },
+    });
+
+    const passwordMatching = await bcrypt.compare(password, user.password);
+    if (!passwordMatching || !user) {
+      throw new UnauthorizedException('Incorrect credential!');
+    }
+
+    const mfaRequired = !!user.mfaSecret;
+    if (mfaRequired) {
+      if (!mfaCode) {
+        return {
+          data: {
+            mfaRequired: true,
+          },
+        };
+      } else {
+        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+
+        if (!mfaValid) {
+          throw new UnauthorizedException('Incorrect credential!');
+        }
+      }
+    }
+
+    return { data: { success: true } };
+  }
+
+  async changePassword(uid: string, body: ChangePasswordDto) {
+    const { password, mfaCode, newPassword } = body;
+    const { data: verifiedData } = await this.verifyPassword(uid, {
+      password,
+      mfaCode,
+    });
+
+    if (verifiedData.mfaRequired) {
+      return {
+        data: verifiedData,
+      };
+    }
+
+    if (verifiedData.success) {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.prismaService.user.update({
+        where: {
+          id: uid,
+        },
+        data: {
+          password: hashedPassword,
+        },
+      });
+    }
+    return { data: { success: true } };
+  }
+
+  async getUserWithoutSensitive(id: string) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id,
+      },
+    });
+    const mfaRequired = !!user.mfaSecret;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
+    return {
+      ...userWithoutSensitive,
+      mfaRequired,
+    };
   }
 }
