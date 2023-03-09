@@ -449,7 +449,7 @@ export class AuthService {
       }
     } else {
       const hashedPassword = await bcrypt.hash(
-        Math.ceil(Math.random() * 1000000),
+        Math.ceil(Math.random() * 1000000).toString(),
         10,
       );
 
@@ -501,7 +501,7 @@ export class AuthService {
       }
     } else {
       const hashedPassword = await bcrypt.hash(
-        Math.ceil(Math.random() * 1000000),
+        Math.ceil(Math.random() * 1000000).toString(),
         10,
       );
 
