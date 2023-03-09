@@ -24,3 +24,11 @@ export const Origin = createParamDecorator(
     return request.headers['origin'];
   },
 );
+
+export const Uid = createParamDecorator((_: string, ctx: ExecutionContext) => {
+  const request = ctx
+    .switchToHttp()
+    .getRequest<Request & { user?: JWTPayload }>();
+
+  return request.user.uid;
+});

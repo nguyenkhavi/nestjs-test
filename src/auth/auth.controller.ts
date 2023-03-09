@@ -1,10 +1,21 @@
-import { Body, Controller, Ip, Post, Put } from '@nestjs/common';
 import {
+  Body,
+  Controller,
+  Head,
+  Ip,
+  Post,
+  Put,
+  Response,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+  ChangePasswordDto,
   ConfirmEmailDto,
   ForgotPasswordDto,
   LoginDto,
@@ -13,8 +24,10 @@ import {
   ResendConfirmEmailDto,
   SSODto,
   UserRegisterDto,
+  VerifyPasswordDto,
 } from 'src/auth/auth.dto';
-import { Origin, UserAgent } from 'src/utils/decorators';
+import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { Origin, Uid, UserAgent } from 'src/utils/decorators';
 import { IUserAgent } from 'src/utils/interface';
 import { AuthService } from './auth.service';
 
@@ -22,6 +35,14 @@ import { AuthService } from './auth.service';
 @ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Head('verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async verifyToken(@Response() response, @Uid() uid: string) {
+    await response.append('uid', uid);
+    await response.sendStatus(200);
+  }
 
   @Post('register')
   @ApiOperation({
@@ -80,6 +101,26 @@ export class AuthController {
   })
   putPassword(@Body() body: PutPasswordDto) {
     return this.authService.putPassword(body);
+  }
+
+  @Post('verify-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Verify password',
+  })
+  verifyPassword(@Body() body: VerifyPasswordDto, @Uid() uid: string) {
+    return this.authService.verifyPassword(uid, body);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change password',
+  })
+  changePassword(@Body() body: ChangePasswordDto, @Uid() uid: string) {
+    return this.authService.changePassword(uid, body);
   }
 
   @Post('login')

@@ -23,9 +23,9 @@ export class SsoService {
   }
 
   async getGoogleProfile(body: SSODto) {
-    const { idToken } = body;
+    const { token } = body;
     const ticket = await this.google.verifyIdToken({
-      idToken,
+      idToken: token,
       audience: [this.configService.get('google.clientId')],
     });
 
@@ -40,10 +40,9 @@ export class SsoService {
   }
 
   async getFacebookProfile(body: SSODto) {
-    const { idToken } = body;
-    console.log({ idToken });
+    const { token } = body;
 
-    this.fb.setAccessToken(idToken);
+    this.fb.setAccessToken(token);
     const data: ISocialProfile = await this.fb.api('/me', 'get', {
       fields: 'id,last_name,email,first_name',
     });

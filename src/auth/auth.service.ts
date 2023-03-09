@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
+  ChangePasswordDto,
   ConfirmEmailDto,
   ForgotPasswordDto,
   LoginDto,
@@ -20,6 +21,7 @@ import {
   ResendConfirmEmailDto,
   SSODto,
   UserRegisterDto,
+  VerifyPasswordDto,
 } from 'src/auth/auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -487,8 +489,6 @@ export class AuthService {
       },
     });
 
-    console.log({ user });
-
     if (user) {
       const mfaRequired = !!user.mfaSecret;
       if (mfaRequired) {
@@ -559,5 +559,67 @@ export class AuthService {
         mfaSecret: null,
       },
     });
+  }
+
+  async verifyPassword(uid: string, body: VerifyPasswordDto) {
+    const { mfaCode, password } = body;
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id: uid,
+        googleUid: null,
+        facebookUid: null,
+      },
+    });
+
+    const passwordMatching = await bcrypt.compare(password, user.password);
+    if (!passwordMatching || !user) {
+      throw new UnauthorizedException('Incorrect credential!');
+    }
+
+    const mfaRequired = !!user.mfaSecret;
+    if (mfaRequired) {
+      if (!mfaCode) {
+        return {
+          data: {
+            mfaRequired: true,
+          },
+        };
+      } else {
+        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+
+        if (!mfaValid) {
+          throw new UnauthorizedException('Incorrect credential!');
+        }
+      }
+    }
+
+    return { data: { success: true } };
+  }
+
+  async changePassword(uid: string, body: ChangePasswordDto) {
+    const { password, mfaCode, newPassword } = body;
+    const { data: verifiedData } = await this.verifyPassword(uid, {
+      password,
+      mfaCode,
+    });
+
+    if (verifiedData.mfaRequired) {
+      return {
+        data: verifiedData,
+      };
+    }
+
+    if (verifiedData.success) {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.prismaService.user.update({
+        where: {
+          id: uid,
+        },
+        data: {
+          password: hashedPassword,
+        },
+      });
+    }
+    return { data: { success: true } };
   }
 }

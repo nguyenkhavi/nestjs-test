@@ -41,6 +41,21 @@ const PutPassword = z
   .merge(ZPassword);
 export class PutPasswordDto extends createZodDto(extendApi(PutPassword)) {}
 
+const VerifyPassword = z.object({}).merge(ZPassword).merge(ZMFACode);
+export class VerifyPasswordDto extends createZodDto(
+  extendApi(VerifyPassword),
+) {}
+
+const ChangePassword = z
+  .object({
+    newPassword: ZPassword.pick({ password: true }),
+  })
+  .merge(ZPassword)
+  .merge(ZMFACode);
+export class ChangePasswordDto extends createZodDto(
+  extendApi(ChangePassword),
+) {}
+
 const Login = z
   .object({
     email: z.string().email('Email is invalid'),
@@ -58,7 +73,7 @@ export class RefreshTokenDto extends createZodDto(extendApi(RefreshToken)) {}
 
 const SSO = z
   .object({
-    idToken: z.string({
+    token: z.string({
       required_error: 'Token is required',
     }),
   })
