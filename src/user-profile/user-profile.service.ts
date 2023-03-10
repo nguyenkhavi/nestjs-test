@@ -30,8 +30,13 @@ export class UserProfileService {
       },
     });
 
+    const lastChangedPassword = await this.authService.getLastChangedPassword(
+      id,
+    );
+
     return {
       data: {
+        lastChangedPassword,
         user,
         profile,
       },

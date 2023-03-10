@@ -318,6 +318,13 @@ export class AuthService {
       throw new BadRequestException('Token is expired');
     }
 
+    await this.prismaService.passwordHistory.create({
+      data: {
+        userId: user.id,
+        password: user.password,
+      },
+    });
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await this.prismaService.user.update({
@@ -642,6 +649,19 @@ export class AuthService {
     }
 
     if (verifiedData.success) {
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+          googleUid: null,
+          facebookUid: null,
+        },
+      });
+      await this.prismaService.passwordHistory.create({
+        data: {
+          userId: user.id,
+          password: user.password,
+        },
+      });
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await this.prismaService.user.update({
         where: {
@@ -668,5 +688,21 @@ export class AuthService {
       ...userWithoutSensitive,
       mfaRequired,
     };
+  }
+
+  async getLastChangedPassword(uid: string) {
+    const historyRecord = await this.prismaService.passwordHistory.findFirst({
+      where: {
+        userId: uid,
+      },
+      select: {
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 1,
+    });
+    return historyRecord || null;
   }
 }
