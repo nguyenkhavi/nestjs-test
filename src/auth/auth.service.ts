@@ -305,6 +305,12 @@ export class AuthService {
       secret: this.configService.get('jwt.confirmSecret'),
     });
     const { uid } = payload;
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: uid,
+      },
+    });
+
     const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
 
     const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
@@ -322,6 +328,19 @@ export class AuthService {
         password: hashedPassword,
       },
     });
+
+    this.mailService.sendPasswordResetEmail(
+      {
+        to: user.email,
+        from: 'huy.pham@spiritlabs.co',
+      },
+      {
+        urlSupport: this.configService.get('sendgrid.supportUrl'),
+        emailWasSentTo: user.email,
+        urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+        urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+      },
+    );
 
     return {};
   }
