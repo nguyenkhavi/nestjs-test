@@ -109,12 +109,11 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mailService.sendConfirmEmail(
-        {
-          to: email,
-          from: 'huy.pham@spiritlabs.co',
-        },
-        {
+      await this.mailService.send({
+        to: email,
+        from: 'huy.pham@spiritlabs.co',
+        templateId: 'sendgrid.confirmEmailTemplateId',
+        dynamicTemplateData: {
           urlVerifyEmail: this.generateConfirmUrl(requestClient.origin, token),
           browser: formatBrowser(requestClient.userAgent),
           ipAddress: requestClient.ip,
@@ -122,7 +121,7 @@ export class AuthService {
           urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
           urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
         },
-      );
+      });
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -166,8 +165,8 @@ export class AuthService {
           id: true,
         },
       });
-      await this.userProfileService.createDefaultProfile(id);
       id = createdUser.id;
+      await this.userProfileService.createDefaultProfile(id);
     }
 
     this.sendConfirmEmail(id, email, requestClient);
@@ -249,12 +248,11 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mailService.sendForgotPasswordEmail(
-        {
-          to: email,
-          from: 'huy.pham@spiritlabs.co',
-        },
-        {
+      await this.mailService.send({
+        to: email,
+        from: 'huy.pham@spiritlabs.co',
+        templateId: 'sendgrid.forgotPasswordEmailTemplateId',
+        dynamicTemplateData: {
           urlResetPassword: this.generateForgotPasswordUrl(
             requestClient.origin,
             token,
@@ -265,7 +263,7 @@ export class AuthService {
           urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
           urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
         },
-      );
+      });
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -305,12 +303,25 @@ export class AuthService {
       secret: this.configService.get('jwt.confirmSecret'),
     });
     const { uid } = payload;
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: uid,
+      },
+    });
+
     const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
 
     const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
     if (latestToken !== token) {
       throw new BadRequestException('Token is expired');
     }
+
+    await this.prismaService.passwordHistory.create({
+      data: {
+        userId: user.id,
+        password: user.password,
+      },
+    });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -320,6 +331,18 @@ export class AuthService {
       },
       data: {
         password: hashedPassword,
+      },
+    });
+
+    this.mailService.send({
+      to: user.email,
+      from: 'huy.pham@spiritlabs.co',
+      templateId: 'sendgrid.resetPasswordEmailTemplateId',
+      dynamicTemplateData: {
+        urlSupport: this.configService.get('sendgrid.supportUrl'),
+        emailWasSentTo: user.email,
+        urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+        urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
     });
 
@@ -623,6 +646,19 @@ export class AuthService {
     }
 
     if (verifiedData.success) {
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+          googleUid: null,
+          facebookUid: null,
+        },
+      });
+      await this.prismaService.passwordHistory.create({
+        data: {
+          userId: user.id,
+          password: user.password,
+        },
+      });
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await this.prismaService.user.update({
         where: {
@@ -649,5 +685,21 @@ export class AuthService {
       ...userWithoutSensitive,
       mfaRequired,
     };
+  }
+
+  async getLastChangedPassword(uid: string) {
+    const historyRecord = await this.prismaService.passwordHistory.findFirst({
+      where: {
+        userId: uid,
+      },
+      select: {
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 1,
+    });
+    return historyRecord || null;
   }
 }

@@ -35,6 +35,7 @@ export const sendgridConfig = registerAs('sendgrid', () => ({
   resetPasswordEmailTemplateId: process.env.RESET_PASSWORD_EMAIL_TEMPLATE_ID,
   contactUsUrl: process.env.CONTACT_US_URL,
   termsOfUse: process.env.TERMS_OF_USE_URL,
+  supportUrl: process.env.SUPPORT_URL,
 }));
 export const jwtConfig = registerAs('jwt', () => ({
   confirmSecret: process.env.JWT_CONFIRM_SECRET,
