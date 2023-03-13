@@ -166,8 +166,8 @@ export class AuthService {
           id: true,
         },
       });
-      await this.userProfileService.createDefaultProfile(id);
       id = createdUser.id;
+      await this.userProfileService.createDefaultProfile(id);
     }
 
     this.sendConfirmEmail(id, email, requestClient);
