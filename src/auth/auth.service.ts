@@ -29,9 +29,9 @@ import { IRequestClient, JWTPayload } from 'src/auth/auth.interface';
 import { ConfigService } from 'src/config/config.service';
 import { Cache } from 'cache-manager';
 import {
-  MAX_CONFIRM_SENT_PER_DAY,
-  MAX_FORGOT_PASS_SENT_PER_DAY,
-  _24H_MILLISECONDS_,
+  // MAX_CONFIRM_SENT_PER_DAY,
+  // MAX_FORGOT_PASS_SENT_PER_DAY,
+  // _24H_MILLISECONDS_,
   _30MIN_MILLISECONDS_,
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
@@ -91,13 +91,13 @@ export class AuthService {
     email: string,
     requestClient: IRequestClient,
   ) {
-    const CACHE_KEY = `confirm-sent:${uid}`;
+    // const CACHE_KEY = `confirm-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-token:${uid}`;
 
-    const sentCount: number = await this.cacheService.get(CACHE_KEY);
+    // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
-    if (+sentCount >= MAX_CONFIRM_SENT_PER_DAY || recentlySent) {
+    if (recentlySent) {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -129,11 +129,11 @@ export class AuthService {
         },
       });
 
-      await this.cacheService.set(
-        CACHE_KEY,
-        (sentCount || 0) + 1,
-        _24H_MILLISECONDS_,
-      );
+      // await this.cacheService.set(
+      //   CACHE_KEY,
+      //   (sentCount || 0) + 1,
+      //   _24H_MILLISECONDS_,
+      // );
       await this.cacheService.set(RECENTLY_SENT_KEY, token, _30S_MILLISECOND_);
       await this.cacheService.set(
         LATEST_TOKEN_KEY,
@@ -142,7 +142,7 @@ export class AuthService {
       );
       console.log(`sendConfirmEmail for ${email}: ${token}`);
     }
-    return sentCount;
+    return true;
   }
 
   async register(body: UserRegisterDto, requestClient: IRequestClient) {
@@ -191,12 +191,12 @@ export class AuthService {
     if (user.emailVerified) {
       throw new BadRequestException('Email is already confirmed');
     }
-    const sentCount = await this.sendConfirmEmail(
+    const success = await this.sendConfirmEmail(
       user.id,
       user.email,
       requestClient,
     );
-    return { data: { id: user.id, sentCount } };
+    return { data: { id: user.id, success } };
   }
 
   async confirmEmail(body: ConfirmEmailDto) {
@@ -230,13 +230,13 @@ export class AuthService {
     email: string,
     requestClient: IRequestClient,
   ) {
-    const CACHE_KEY = `forgot-sent:${uid}`;
+    // const CACHE_KEY = `forgot-sent:${uid}`;
     const RECENTLY_SENT_KEY = `recently-forgot-sent:${uid}`;
     const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
 
-    const sentCount: number = await this.cacheService.get(CACHE_KEY);
+    // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
-    if (+sentCount >= MAX_FORGOT_PASS_SENT_PER_DAY || recentlySent) {
+    if (recentlySent) {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -271,11 +271,11 @@ export class AuthService {
         },
       });
 
-      await this.cacheService.set(
-        CACHE_KEY,
-        (sentCount || 0) + 1,
-        _24H_MILLISECONDS_,
-      );
+      // await this.cacheService.set(
+      //   CACHE_KEY,
+      //   (sentCount || 0) + 1,
+      //   _24H_MILLISECONDS_,
+      // );
       await this.cacheService.set(RECENTLY_SENT_KEY, token, _30S_MILLISECOND_);
       await this.cacheService.set(
         LATEST_TOKEN_KEY,
@@ -283,7 +283,7 @@ export class AuthService {
         _30MIN_MILLISECONDS_,
       );
     }
-    return sentCount;
+    return true;
   }
   async forgotPassword(body: ForgotPasswordDto, requestClient: IRequestClient) {
     const { email } = body;
@@ -294,12 +294,12 @@ export class AuthService {
         facebookUid: null,
       },
     });
-    const sentCount = await this.sendForgotPasswordEmail(
+    const success = await this.sendForgotPasswordEmail(
       user.id,
       user.email,
       requestClient,
     );
-    return { data: { sentCount } };
+    return { data: { success } };
   }
 
   async putPassword(body: PutPasswordDto) {
