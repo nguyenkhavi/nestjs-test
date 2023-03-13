@@ -35,7 +35,7 @@ import {
   _30MIN_MILLISECONDS_,
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
-import { User } from '@prisma/client';
+import { EUserStatus, User } from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
 import { formatBrowser } from 'src/utils/fn';
@@ -59,11 +59,17 @@ export class AuthService {
     private readonly cacheService: Cache,
   ) {}
 
+  async verifyToken(id: string) {
+    const user = await this.findOrThrow(id);
+    return { data: { id, email: user.email } };
+  }
+
   async findOrThrow(id: string) {
     return this.prismaService.user.findFirstOrThrow({
       where: {
         id,
         emailVerified: true,
+        status: EUserStatus.ACTIVE,
       },
     });
   }

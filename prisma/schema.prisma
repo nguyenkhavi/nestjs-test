@@ -8,14 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EUserStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id            String   @id @default(uuid())
   email         String?  @db.VarChar(255)
   password      String   @db.VarChar(255)
   mfaSecret     String?  @db.VarChar(255)
   emailVerified Boolean  @default(false)
-  googleUid     String?  @db.VarChar(255) 
+  googleUid     String?  @db.VarChar(255)
   facebookUid   String?  @db.VarChar(255)
+  status        EUserStatus @default(ACTIVE)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
