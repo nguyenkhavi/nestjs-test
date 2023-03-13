@@ -11,6 +11,7 @@ import { MfaModule } from './mfa/mfa.module';
 import { MailModule } from './mail/mail.module';
 import { SsoModule } from './sso/sso.module';
 import { UserProfileModule } from './user-profile/user-profile.module';
+import { ProxyModule } from './proxy/proxy.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UserProfileModule } from './user-profile/user-profile.module';
     MailModule,
     SsoModule,
     UserProfileModule,
+    ProxyModule,
   ],
 
   controllers: [AppController],
