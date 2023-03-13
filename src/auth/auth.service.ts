@@ -109,12 +109,11 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mailService.sendConfirmEmail(
-        {
-          to: email,
-          from: 'huy.pham@spiritlabs.co',
-        },
-        {
+      await this.mailService.send({
+        to: email,
+        from: 'huy.pham@spiritlabs.co',
+        templateId: 'sendgrid.confirmEmailTemplateId',
+        dynamicTemplateData: {
           urlVerifyEmail: this.generateConfirmUrl(requestClient.origin, token),
           browser: formatBrowser(requestClient.userAgent),
           ipAddress: requestClient.ip,
@@ -122,7 +121,7 @@ export class AuthService {
           urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
           urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
         },
-      );
+      });
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -249,12 +248,11 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.confirmExpires'),
       });
 
-      await this.mailService.sendForgotPasswordEmail(
-        {
-          to: email,
-          from: 'huy.pham@spiritlabs.co',
-        },
-        {
+      await this.mailService.send({
+        to: email,
+        from: 'huy.pham@spiritlabs.co',
+        templateId: 'sendgrid.forgotPasswordEmailTemplateId',
+        dynamicTemplateData: {
           urlResetPassword: this.generateForgotPasswordUrl(
             requestClient.origin,
             token,
@@ -265,7 +263,7 @@ export class AuthService {
           urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
           urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
         },
-      );
+      });
 
       await this.cacheService.set(
         CACHE_KEY,
@@ -336,18 +334,17 @@ export class AuthService {
       },
     });
 
-    this.mailService.sendPasswordResetEmail(
-      {
-        to: user.email,
-        from: 'huy.pham@spiritlabs.co',
-      },
-      {
+    this.mailService.send({
+      to: user.email,
+      from: 'huy.pham@spiritlabs.co',
+      templateId: 'sendgrid.resetPasswordEmailTemplateId',
+      dynamicTemplateData: {
         urlSupport: this.configService.get('sendgrid.supportUrl'),
         emailWasSentTo: user.email,
         urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
-    );
+    });
 
     return {};
   }
