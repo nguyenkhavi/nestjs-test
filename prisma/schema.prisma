@@ -19,18 +19,18 @@ enum EEnviroment {
 }
 
 model User {
-  id                String       @id @default(uuid())
-  email             String?      @db.VarChar(255)
-  password          String       @db.VarChar(255)
-  mfaSecret         String?      @db.VarChar(255)
-  emailVerified     Boolean      @default(false)
-  googleUid         String?      @db.VarChar(255)
-  facebookUid       String?      @db.VarChar(255)
-  timezone          String       @db.VarChar(255) @default("GMT+8")
-  status            EUserStatus  @default(ACTIVE)
-  tenants UserTenant[]
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id            String       @id @default(uuid())
+  email         String?      @db.VarChar(255)
+  password      String       @db.VarChar(255)
+  mfaSecret     String?      @db.VarChar(255)
+  emailVerified Boolean      @default(false)
+  googleUid     String?      @db.VarChar(255)
+  facebookUid   String?      @db.VarChar(255)
+  timezone      String       @default("GMT+8") @db.VarChar(255)
+  status        EUserStatus  @default(ACTIVE)
+  tenants       UserTenant[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@map("user")
 }
