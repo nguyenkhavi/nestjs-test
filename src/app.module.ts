@@ -12,6 +12,7 @@ import { MailModule } from './mail/mail.module';
 import { SsoModule } from './sso/sso.module';
 import { UserProfileModule } from './user-profile/user-profile.module';
 import { ProxyModule } from './proxy/proxy.module';
+import { TenantModule } from './tenant/tenant.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ProxyModule } from './proxy/proxy.module';
     SsoModule,
     UserProfileModule,
     ProxyModule,
+    TenantModule,
   ],
 
   controllers: [AppController],

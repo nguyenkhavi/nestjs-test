@@ -39,11 +39,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   verifyToken(@Uid() uid: string) {
-    return {
-      data: {
-        uid,
-      },
-    };
+    return this.authService.verifyToken(uid);
   }
 
   @Post('register')

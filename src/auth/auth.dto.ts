@@ -2,13 +2,14 @@ import { z } from 'zod';
 
 import { createZodDto } from '@anatine/zod-nestjs';
 import { extendApi } from '@anatine/zod-openapi';
-import { ZMFACode, ZPassword } from 'src/utils/zod';
+import { ZMFACode, ZPassword, ZTimezone } from 'src/utils/zod';
 
 const UserRegister = z
   .object({
     email: z.string().email('Email is invalid'),
   })
-  .merge(ZPassword);
+  .merge(ZPassword.required())
+  .merge(ZTimezone.required());
 export class UserRegisterDto extends createZodDto(extendApi(UserRegister)) {}
 
 const ConfirmEmail = z.object({
@@ -77,5 +78,6 @@ const SSO = z
       required_error: 'Token is required',
     }),
   })
-  .merge(ZMFACode);
+  .merge(ZMFACode)
+  .merge(ZTimezone.required());
 export class SSODto extends createZodDto(extendApi(SSO)) {}

@@ -8,26 +8,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EUserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EEnviroment {
+  MAINNET
+  TESTNET
+}
+
 model User {
-  id            String   @id @default(uuid())
-  email         String?  @db.VarChar(255)
-  password      String   @db.VarChar(255)
-  mfaSecret     String?  @db.VarChar(255)
-  emailVerified Boolean  @default(false)
-  googleUid     String?  @db.VarChar(255) 
-  facebookUid   String?  @db.VarChar(255)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String       @id @default(uuid())
+  email             String?      @db.VarChar(255)
+  password          String       @db.VarChar(255)
+  mfaSecret         String?      @db.VarChar(255)
+  emailVerified     Boolean      @default(false)
+  googleUid         String?      @db.VarChar(255)
+  facebookUid       String?      @db.VarChar(255)
+  timezone          String       @db.VarChar(255) @default("GMT+8")
+  status            EUserStatus  @default(ACTIVE)
+  tenants UserTenant[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@map("user")
 }
 
 model PasswordHistory {
-  id           String   @id @default(uuid())
-  userId       String  
-  password     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("password-history")
 }
@@ -43,13 +56,25 @@ model UserToken {
 }
 
 model UserProfile {
-  id           String   @id @default(uuid())
-  userId       String   @db.Uuid @unique
-  name         String   @db.VarChar(255) @default("")
-  avatar       String   @db.VarChar(255) @default("")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String   @unique @db.Uuid
+  name      String   @default("") @db.VarChar(255)
+  avatar    String   @default("") @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("user-profile")
 }
 
+model UserTenant {
+  id         String      @id @default(uuid())
+  userId     String
+  users      User        @relation(fields: [userId], references: [id])
+  tenantId   String
+  signNodeId String
+  env        EEnviroment @default(TESTNET)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("user-tenant")
+}
