@@ -24,11 +24,6 @@ export class UserProfileService {
 
   async getMyProfile(id: string) {
     const user = await this.authService.getUserWithoutSensitive(id);
-    const profile = await this.prismaService.userProfile.findUniqueOrThrow({
-      where: {
-        userId: id,
-      },
-    });
 
     const lastChangedPassword = await this.authService.getLastChangedPassword(
       id,
@@ -38,7 +33,6 @@ export class UserProfileService {
       data: {
         lastChangedPassword,
         user,
-        profile,
       },
     };
   }

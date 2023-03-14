@@ -543,18 +543,22 @@ export class AuthService {
 
     const data = await this.generateAuthorizedResponse(user);
 
-    const testTenant = await this.tenantService.createTestnetTenant({
-      timezone: user.timezone,
-      token: data.accessToken,
-    });
+    if (!data.data.tenants?.length) {
+      const testTenant = await this.tenantService.createTestnetTenant({
+        timezone: user.timezone,
+        token: data.accessToken,
+      });
 
-    await this.prismaService.userTenant.create({
-      data: {
-        userId: user.id,
-        signNodeId: testTenant.signNodeId,
-        tenantId: testTenant.tenantId,
-      },
-    });
+      const tenant = await this.prismaService.userTenant.create({
+        data: {
+          userId: user.id,
+          signNodeId: testTenant.signNodeId,
+          tenantId: testTenant.tenantId,
+        },
+      });
+
+      data.data.tenants = [tenant];
+    }
 
     return { data };
   }
@@ -619,18 +623,22 @@ export class AuthService {
 
     const data = await this.generateAuthorizedResponse(user);
 
-    const testTenant = await this.tenantService.createTestnetTenant({
-      timezone: user.timezone,
-      token: data.accessToken,
-    });
+    if (!data.data.tenants?.length) {
+      const testTenant = await this.tenantService.createTestnetTenant({
+        timezone: user.timezone,
+        token: data.accessToken,
+      });
 
-    await this.prismaService.userTenant.create({
-      data: {
-        userId: user.id,
-        signNodeId: testTenant.signNodeId,
-        tenantId: testTenant.tenantId,
-      },
-    });
+      const tenant = await this.prismaService.userTenant.create({
+        data: {
+          userId: user.id,
+          signNodeId: testTenant.signNodeId,
+          tenantId: testTenant.tenantId,
+        },
+      });
+
+      data.data.tenants = [tenant];
+    }
 
     return { data };
   }
@@ -747,7 +755,12 @@ export class AuthService {
       where: {
         id,
       },
+      include: {
+        tenants: true,
+        profile: true,
+      },
     });
+
     const mfaRequired = !!user.mfaSecret;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
