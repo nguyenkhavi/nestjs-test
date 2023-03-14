@@ -10,8 +10,8 @@ export class MailService {
 
   async send(mail: IMail) {
     const transport = await SendGrid.send({
-      templateId: this.configService.get(mail.templateId),
       ...mail,
+      templateId: this.configService.get(mail.templateId),
     });
     // avoid this on production. use log instead :)
     console.log(`E-Mail sent to ${mail.to}`);
