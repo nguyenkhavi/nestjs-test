@@ -41,12 +41,14 @@ import { MailService } from 'src/mail/mail.service';
 import { formatBrowser } from 'src/utils/fn';
 import { SsoService } from 'src/sso/sso.service';
 import { UserProfileService } from 'src/user-profile/user-profile.service';
+import { TenantService } from 'src/tenant/tenant.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mailService: MailService,
+    private readonly tenantService: TenantService,
     private readonly ssoService: SsoService,
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
@@ -146,7 +148,7 @@ export class AuthService {
   }
 
   async register(body: UserRegisterDto, requestClient: IRequestClient) {
-    const { email, password } = body;
+    const { email, password, timezone } = body;
     const existUserWithEmail = await this.prismaService.user.findFirst({
       where: {
         email,
@@ -166,6 +168,7 @@ export class AuthService {
         data: {
           email,
           password: hashedPassword,
+          timezone,
         },
         select: {
           id: true,
@@ -213,7 +216,7 @@ export class AuthService {
       throw new BadRequestException('Token is expired');
     }
 
-    await this.prismaService.user.update({
+    const user = await this.prismaService.user.update({
       where: {
         id: uid,
       },
@@ -222,7 +225,22 @@ export class AuthService {
       },
     });
 
-    return {};
+    const data = await this.generateAuthorizedResponse(user);
+
+    const testTenant = await this.tenantService.createTestnetTenant({
+      timezone: user.timezone,
+      token: data.accessToken,
+    });
+
+    await this.prismaService.userTenant.create({
+      data: {
+        userId: user.id,
+        signNodeId: testTenant.signNodeId,
+        tenantId: testTenant.tenantId,
+      },
+    });
+
+    return { data };
   }
 
   async sendForgotPasswordEmail(
@@ -375,8 +393,21 @@ export class AuthService {
         refreshToken,
       },
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, mfaSecret: __, ...userWithoutSensitive } = user;
+    const userWithTenant = await this.prismaService.user.findUnique({
+      where: {
+        id: user.id,
+      },
+      include: {
+        tenants: true,
+      },
+    });
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      password: _,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      mfaSecret: __,
+      ...userWithoutSensitive
+    } = userWithTenant;
     return {
       accessToken,
       refreshToken,
@@ -390,6 +421,9 @@ export class AuthService {
       where: {
         email,
         emailVerified: true,
+      },
+      include: {
+        tenants: true,
       },
     });
     const passwordMatching = await bcrypt.compare(password, user.password);
@@ -450,7 +484,7 @@ export class AuthService {
   }
 
   async ssoGoogle(body: SSODto) {
-    const { mfaCode } = body;
+    const { mfaCode, timezone } = body;
     const profile = await this.ssoService.getGoogleProfile(body);
 
     if (!profile) {
@@ -497,6 +531,7 @@ export class AuthService {
           password: hashedPassword,
           emailVerified: true,
           googleUid,
+          timezone,
         },
       });
       await this.userProfileService.createDefaultProfile(
@@ -507,11 +542,25 @@ export class AuthService {
     }
 
     const data = await this.generateAuthorizedResponse(user);
+
+    const testTenant = await this.tenantService.createTestnetTenant({
+      timezone: user.timezone,
+      token: data.accessToken,
+    });
+
+    await this.prismaService.userTenant.create({
+      data: {
+        userId: user.id,
+        signNodeId: testTenant.signNodeId,
+        tenantId: testTenant.tenantId,
+      },
+    });
+
     return { data };
   }
 
   async ssoFacebook(body: SSODto) {
-    const { mfaCode } = body;
+    const { mfaCode, timezone } = body;
     const profile = await this.ssoService.getFacebookProfile(body);
 
     if (!profile) {
@@ -556,8 +605,9 @@ export class AuthService {
         data: {
           email,
           password: hashedPassword,
-          emailVerified: false,
+          emailVerified: true,
           facebookUid,
+          timezone,
         },
       });
       await this.userProfileService.createDefaultProfile(
@@ -568,6 +618,20 @@ export class AuthService {
     }
 
     const data = await this.generateAuthorizedResponse(user);
+
+    const testTenant = await this.tenantService.createTestnetTenant({
+      timezone: user.timezone,
+      token: data.accessToken,
+    });
+
+    await this.prismaService.userTenant.create({
+      data: {
+        userId: user.id,
+        signNodeId: testTenant.signNodeId,
+        tenantId: testTenant.tenantId,
+      },
+    });
+
     return { data };
   }
 

@@ -59,6 +59,8 @@ export const facebookConfig = registerAs('facebook', () => ({
 export const proxyConfig = registerAs('proxy', () => ({
   mainnetUrl: process.env.MAINNET_URL,
   testnetUrl: process.env.TESTNET_URL,
+  testnetApiKey: process.env.TESTNET_API_KEY,
+  mainnetApiKey: process.env.MAINNET_API_KEY,
 }));
 
 export const appConfigs = [

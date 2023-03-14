@@ -16,3 +16,7 @@ export const ZPassword = z.object({
 export const ZMFACode = z.object({
   mfaCode: z.string().trim().length(6, 'MFA Code format is invalid').optional(),
 });
+
+export const ZTimezone = z.object({
+  timezone: z.string().regex(/^GMT([+-]\d{1,2})$/),
+});
