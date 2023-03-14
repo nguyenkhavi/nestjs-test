@@ -41,7 +41,7 @@ Build details: <${env.BUILD_URL}/display/redirect|See in web console>
                                         sshUserPrivateKey(credentialsId:'jenkins-master-ssh-credential' , keyFileVariable: 'identity', passphraseVariable: '', usernameVariable: 'userName'),
                                         string(credentialsId: 'vault-token', variable: 'VAULT_TOKEN')
                                     ]) {
-                                    sh 'ssh -o \"StrictHostKeyChecking no\" -i $identity dong@home.spiritlabs.co -p 23 \"cd /home/dong/code/web3asy/web3asy-proxy && ./scripts/build-dev.sh $DEV_BRANCH $VAULT_TOKEN $VAULT_URL\"'
+                                    sh 'ssh -o \"StrictHostKeyChecking no\" -i $identity dong@home.spiritlabs.co -p 23 \"cd /home/dong/code/web3asy/web3asy-proxy && zsh ./scripts/build-dev.sh $DEV_BRANCH $VAULT_TOKEN $VAULT_URL\"'
                                 }
                             }
 

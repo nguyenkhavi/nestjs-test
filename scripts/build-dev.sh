@@ -8,4 +8,4 @@ curl \
     $3/v1/kv/data/web3asy-proxy \
 | jq ".data.data" | jq -r 'to_entries|map("\(.key)=\"\(.value|tostring)\"")|.[]' > .env
 cd ..
-docker compose --env-file web3asy-proxy/.env up --build -d proxy
+docker compose up --build -d proxy
