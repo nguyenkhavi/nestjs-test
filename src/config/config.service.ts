@@ -56,12 +56,18 @@ export const facebookConfig = registerAs('facebook', () => ({
   appSecret: process.env.FB_APP_SECRET,
 }));
 
+export const proxyConfig = registerAs('proxy', () => ({
+  mainnetUrl: process.env.MAINNET_URL,
+  testnetUrl: process.env.TESTNET_URL,
+}));
+
 export const appConfigs = [
   appConfig,
   sendgridConfig,
   jwtConfig,
   googleConfig,
   facebookConfig,
+  proxyConfig,
 ];
 
 export class ConfigService extends NestjsConfigService<
@@ -72,6 +78,7 @@ export class ConfigService extends NestjsConfigService<
       typeof jwtConfig,
       typeof googleConfig,
       typeof facebookConfig,
+      typeof proxyConfig,
     ]
   >
 > {}
