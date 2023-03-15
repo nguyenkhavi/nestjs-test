@@ -242,6 +242,7 @@ export class AuthService {
     const testTenant = await this.tenantService.createTestnetTenant({
       timezone: user.timezone,
       token: data.accessToken,
+      session: data.accessToken,
     });
 
     await this.prismaService.userTenant.create({
@@ -496,7 +497,7 @@ export class AuthService {
   }
 
   async ssoGoogle(body: SSODto) {
-    const { mfaCode, timezone } = body;
+    const { mfaCode, timezone, token } = body;
     const profile = await this.ssoService.getGoogleProfile(body);
 
     if (!profile) {
@@ -559,6 +560,7 @@ export class AuthService {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
         token: data.accessToken,
+        session: token,
       });
 
       const tenant = await this.prismaService.userTenant.create({
@@ -576,7 +578,7 @@ export class AuthService {
   }
 
   async ssoFacebook(body: SSODto) {
-    const { mfaCode, timezone } = body;
+    const { mfaCode, timezone, token } = body;
     const profile = await this.ssoService.getFacebookProfile(body);
 
     if (!profile) {
@@ -639,6 +641,7 @@ export class AuthService {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
         token: data.accessToken,
+        session: token,
       });
 
       const tenant = await this.prismaService.userTenant.create({

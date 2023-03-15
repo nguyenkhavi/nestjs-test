@@ -6,6 +6,7 @@ import { ZTimezone } from 'src/utils/zod';
 const CreateTenant = z
   .object({
     token: z.string(),
+    session: z.string(),
   })
   .merge(ZTimezone);
 export class CreateTenantDto extends createZodDto(extendApi(CreateTenant)) {}
