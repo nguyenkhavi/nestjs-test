@@ -12,7 +12,7 @@ export class TenantService {
     private readonly configService: ConfigService,
   ) {}
   async createTestnetTenant(dto: CreateTenantDto) {
-    const { token, timezone } = dto;
+    const { token, timezone, session } = dto;
     const { data } = await firstValueFrom(
       this.httpService.request<Pick<UserTenant, 'signNodeId' | 'tenantId'>>({
         baseURL: this.configService.get('proxy.testnetUrl'),
@@ -21,6 +21,7 @@ export class TenantService {
         headers: {
           'api-key': this.configService.get('proxy.testnetApiKey'),
           Authorization: `Bearer ${token}`,
+          session,
         },
         data: {
           timezone,
