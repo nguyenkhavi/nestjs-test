@@ -209,14 +209,26 @@ export class AuthService {
       secret: this.configService.get('jwt.confirmSecret'),
     });
     const { uid } = payload;
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id: uid,
+        emailVerified: false,
+      },
+    });
+
     const LATEST_TOKEN_KEY = `latest-token:${uid}`;
 
     const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
     if (latestToken !== token) {
-      throw new BadRequestException('Token is expired');
+      return {
+        data: {
+          tokenExpired: true,
+          email: user.email,
+        },
+      };
     }
 
-    const user = await this.prismaService.user.update({
+    const updated = await this.prismaService.user.update({
       where: {
         id: uid,
       },
@@ -225,7 +237,7 @@ export class AuthService {
       },
     });
 
-    const data = await this.generateAuthorizedResponse(user);
+    const data = await this.generateAuthorizedResponse(updated);
 
     const testTenant = await this.tenantService.createTestnetTenant({
       timezone: user.timezone,
