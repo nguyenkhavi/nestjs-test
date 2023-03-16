@@ -765,7 +765,7 @@ export class AuthService {
           password: user.password,
         },
       });
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword.password, 10);
       await this.prismaService.user.update({
         where: {
           id: uid,
