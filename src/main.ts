@@ -23,12 +23,13 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
     credentials: true,
     allowedHeaders: [
-      'Access-Control-Allow-Origin',
+      // 'Access-Control-Allow-Origin',
       'Origin',
       'X-Requested-With',
       'Accept',
       'Content-Type',
       'Authorization',
+      'session',
     ],
   };
 
