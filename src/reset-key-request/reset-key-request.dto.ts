@@ -21,11 +21,15 @@ export class VerifyResetKeyDto extends createZodDto(
   extendApi(VerifyResetKey),
 ) {}
 
-const VerifyResetKeySSO = z.object({
-  requestId: z.string().trim().nonempty(),
-  googleUid: z.string().optional(),
-  facebookUid: z.string().optional(),
-});
+const VerifyResetKeySSO = z
+  .object({
+    requestId: z.string().trim().nonempty(),
+    googleUid: z.string().optional(),
+    facebookUid: z.string().optional(),
+  })
+  .refine((data) => !!data.googleUid || !!data.facebookUid, {
+    message: 'One of googleUid and facebookUid must be provided!',
+  });
 export class VerifyResetKeySSODto extends createZodDto(
   extendApi(VerifyResetKeySSO),
 ) {}

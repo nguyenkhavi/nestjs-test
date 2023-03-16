@@ -106,7 +106,11 @@ export class ResetKeyRequestService {
       },
     });
     const user = request.user;
-    if (user.googleUid !== googleUid && user.facebookUid !== facebookUid) {
+    if (user.googleUid !== googleUid && !!googleUid) {
+      throw new ForbiddenException('The request is own by another user!');
+    }
+
+    if (user.facebookUid !== facebookUid && !!facebookUid) {
       throw new ForbiddenException('The request is own by another user!');
     }
 

@@ -2,7 +2,6 @@ import {
   All,
   Body,
   Controller,
-  Get,
   Head,
   Headers,
   Param,
