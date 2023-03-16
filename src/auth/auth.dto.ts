@@ -6,7 +6,7 @@ import { ZMFACode, ZPassword, ZTimezone } from 'src/utils/zod';
 
 const UserRegister = z
   .object({
-    email: z.string().email('Email is invalid'),
+    email: z.string().trim().toLowerCase().email('Email is invalid'),
   })
   .merge(ZPassword.required())
   .merge(ZTimezone.required());
@@ -20,14 +20,14 @@ const ConfirmEmail = z.object({
 export class ConfirmEmailDto extends createZodDto(extendApi(ConfirmEmail)) {}
 
 const ResendConfirmEmail = z.object({
-  email: z.string().email('Email is invalid'),
+  email: z.string().trim().toLowerCase().email('Email is invalid'),
 });
 export class ResendConfirmEmailDto extends createZodDto(
   extendApi(ResendConfirmEmail),
 ) {}
 
 const ForgotPassword = z.object({
-  email: z.string().email('Email is invalid'),
+  email: z.string().trim().toLowerCase().email('Email is invalid'),
 });
 export class ForgotPasswordDto extends createZodDto(
   extendApi(ForgotPassword),
@@ -59,7 +59,7 @@ export class ChangePasswordDto extends createZodDto(
 
 const Login = z
   .object({
-    email: z.string().email('Email is invalid'),
+    email: z.string().trim().toLowerCase().email('Email is invalid'),
   })
   .merge(ZPassword)
   .merge(ZMFACode);
