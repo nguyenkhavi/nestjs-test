@@ -32,3 +32,23 @@ export const Uid = createParamDecorator((_: string, ctx: ExecutionContext) => {
 
   return request.user.uid;
 });
+
+export const Authorization = createParamDecorator(
+  (_: string, ctx: ExecutionContext) => {
+    const request = ctx
+      .switchToHttp()
+      .getRequest<Request & { user?: JWTPayload }>();
+
+    return request.headers['Authorization'];
+  },
+);
+
+export const Session = createParamDecorator(
+  (_: string, ctx: ExecutionContext) => {
+    const request = ctx
+      .switchToHttp()
+      .getRequest<Request & { user?: JWTPayload }>();
+
+    return request.headers['session'];
+  },
+);

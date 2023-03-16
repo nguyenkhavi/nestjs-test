@@ -13,6 +13,7 @@ import { SsoModule } from './sso/sso.module';
 import { UserProfileModule } from './user-profile/user-profile.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { TenantModule } from './tenant/tenant.module';
+import { ResetKeyRequestModule } from './reset-key-request/reset-key-request.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { TenantModule } from './tenant/tenant.module';
     UserProfileModule,
     ProxyModule,
     TenantModule,
+    ResetKeyRequestModule,
   ],
 
   controllers: [AppController],
