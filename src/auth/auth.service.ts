@@ -205,21 +205,61 @@ export class AuthService {
   async confirmEmail(body: ConfirmEmailDto) {
     const { token } = body;
 
-    const payload: JWTPayload = this.jwtService.verify(token, {
-      secret: this.configService.get('jwt.confirmSecret'),
-    });
-    const { uid } = payload;
-    const user = await this.prismaService.user.findFirstOrThrow({
-      where: {
-        id: uid,
-        emailVerified: false,
-      },
-    });
+    try {
+      const payload: JWTPayload = this.jwtService.verify(token, {
+        secret: this.configService.get('jwt.confirmSecret'),
+      });
+      const { uid } = payload;
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+          emailVerified: false,
+        },
+      });
 
-    const LATEST_TOKEN_KEY = `latest-token:${uid}`;
+      const LATEST_TOKEN_KEY = `latest-token:${uid}`;
 
-    const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
-    if (latestToken !== token) {
+      const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+      if (latestToken !== token) {
+        throw new BadRequestException();
+      }
+
+      const updated = await this.prismaService.user.update({
+        where: {
+          id: uid,
+        },
+        data: {
+          emailVerified: true,
+        },
+      });
+
+      const data = await this.generateAuthorizedResponse(updated);
+
+      const testTenant = await this.tenantService.createTestnetTenant({
+        timezone: user.timezone,
+        token: data.accessToken,
+        session: data.accessToken,
+      });
+
+      await this.prismaService.userTenant.create({
+        data: {
+          userId: user.id,
+          signNodeId: testTenant.signNodeId,
+          tenantId: testTenant.tenantId,
+        },
+      });
+
+      return { data };
+    } catch (e) {
+      const payload = this.jwtService.decode(token) as JWTPayload;
+      const { uid } = payload;
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+          emailVerified: false,
+        },
+      });
+
       return {
         data: {
           tokenExpired: true,
@@ -227,33 +267,6 @@ export class AuthService {
         },
       };
     }
-
-    const updated = await this.prismaService.user.update({
-      where: {
-        id: uid,
-      },
-      data: {
-        emailVerified: true,
-      },
-    });
-
-    const data = await this.generateAuthorizedResponse(updated);
-
-    const testTenant = await this.tenantService.createTestnetTenant({
-      timezone: user.timezone,
-      token: data.accessToken,
-      session: data.accessToken,
-    });
-
-    await this.prismaService.userTenant.create({
-      data: {
-        userId: user.id,
-        signNodeId: testTenant.signNodeId,
-        tenantId: testTenant.tenantId,
-      },
-    });
-
-    return { data };
   }
 
   async sendForgotPasswordEmail(
