@@ -12,6 +12,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import {
   ResetKeyDto,
   VerifyResetKeyDto,
+  VerifyResetKeySSODto,
 } from 'src/reset-key-request/reset-key-request.dto';
 import { TenantService } from 'src/tenant/tenant.service';
 import { _5MIN_MILLISECONDS_ } from 'src/utils/constants';
@@ -56,7 +57,6 @@ export class ResetKeyRequestService {
       },
     });
     const requestId = request.id;
-    console.log({ requestId });
 
     const { data } = await firstValueFrom(
       this.httpService.request({
@@ -82,6 +82,31 @@ export class ResetKeyRequestService {
       },
     });
     if (request.userId !== userId) {
+      throw new ForbiddenException('The request is own by another user!');
+    }
+
+    const expired =
+      dayjs().diff(dayjs(request.createdAt), 'milliseconds') >=
+      _5MIN_MILLISECONDS_;
+    if (expired) {
+      throw new BadRequestException('Request is expired!');
+    }
+
+    return { data: { success: true } };
+  }
+
+  async verifyResetKeyByProvider(dto: VerifyResetKeySSODto) {
+    const { requestId, googleUid, facebookUid } = dto;
+    const request = await this.prismaService.resetKeyRequest.findUniqueOrThrow({
+      where: {
+        id: requestId,
+      },
+      include: {
+        user: true,
+      },
+    });
+    const user = request.user;
+    if (user.googleUid !== googleUid && user.facebookUid !== facebookUid) {
       throw new ForbiddenException('The request is own by another user!');
     }
 

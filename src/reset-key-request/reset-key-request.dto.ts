@@ -20,3 +20,12 @@ const VerifyResetKey = z.object({
 export class VerifyResetKeyDto extends createZodDto(
   extendApi(VerifyResetKey),
 ) {}
+
+const VerifyResetKeySSO = z.object({
+  requestId: z.string().trim().nonempty(),
+  googleUid: z.string().optional(),
+  facebookUid: z.string().optional(),
+});
+export class VerifyResetKeySSODto extends createZodDto(
+  extendApi(VerifyResetKeySSO),
+) {}

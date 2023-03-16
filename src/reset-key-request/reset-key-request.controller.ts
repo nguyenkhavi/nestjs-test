@@ -4,6 +4,7 @@ import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import {
   ResetKeyDto,
   VerifyResetKeyDto,
+  VerifyResetKeySSODto,
 } from 'src/reset-key-request/reset-key-request.dto';
 import { ResetKeyRequestService } from 'src/reset-key-request/reset-key-request.service';
 import { Authorization, Session, Uid } from 'src/utils/decorators';
@@ -33,9 +34,17 @@ export class ResetKeyRequestController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Verify reset key request for a project',
+    summary: 'Verify reset key request with local-login user',
   })
   verifyResetKey(@Body() dto: VerifyResetKeyDto, @Uid() uid: string) {
     return this.resetKeyRequestService.verifyResetKey(dto, uid);
+  }
+
+  @Post('verify-reset-key-sso')
+  @ApiOperation({
+    summary: 'Verify reset key request with SSO user',
+  })
+  verifyResetKeySSO(@Body() dto: VerifyResetKeySSODto) {
+    return this.resetKeyRequestService.verifyResetKeyByProvider(dto);
   }
 }
