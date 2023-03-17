@@ -5,8 +5,6 @@ import {
   CACHE_MANAGER,
   ConflictException,
   forwardRef,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -101,14 +99,7 @@ export class AuthService {
     // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
     if (recentlySent) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'Too Many Requests',
-          message: 'Rate limit exceeded.',
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+      throw new BadRequestException('In waiting time!');
     } else {
       const payload: JWTPayload = {
         uid,
@@ -282,14 +273,7 @@ export class AuthService {
     // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
     if (recentlySent) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'Too Many Requests',
-          message: 'Rate limit exceeded.',
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+      throw new BadRequestException('In waiting time!');
     } else {
       const payload: JWTPayload = {
         uid,
