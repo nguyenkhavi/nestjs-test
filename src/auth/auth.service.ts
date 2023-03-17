@@ -735,46 +735,52 @@ export class AuthService {
       }
     }
 
-    return { data: { success: true } };
+    const payload: JWTPayload = {
+      uid,
+    };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('jwt.confirmSecret'),
+      expiresIn: this.configService.get('jwt.confirmExpires'),
+    });
+
+    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+    await this.cacheService.set(LATEST_TOKEN_KEY, token);
+
+    return { data: { success: true, token } };
   }
 
   async changePassword(uid: string, body: ChangePasswordDto) {
-    const { password, mfaCode, newPassword } = body;
-    const { data: verifiedData } = await this.verifyPassword(uid, {
-      password,
-      mfaCode,
+    const { newPassword, token } = body;
+
+    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+    const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+
+    if (latestToken !== token) {
+      throw new BadRequestException('Token is invalid!');
+    }
+
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id: uid,
+        googleUid: null,
+        facebookUid: null,
+      },
     });
-
-    if (verifiedData.mfaRequired) {
-      return {
-        data: verifiedData,
-      };
-    }
-
-    if (verifiedData.success) {
-      const user = await this.prismaService.user.findFirstOrThrow({
-        where: {
-          id: uid,
-          googleUid: null,
-          facebookUid: null,
-        },
-      });
-      await this.prismaService.passwordHistory.create({
-        data: {
-          userId: user.id,
-          password: user.password,
-        },
-      });
-      const hashedPassword = await bcrypt.hash(newPassword.password, 10);
-      await this.prismaService.user.update({
-        where: {
-          id: uid,
-        },
-        data: {
-          password: hashedPassword,
-        },
-      });
-    }
+    await this.prismaService.passwordHistory.create({
+      data: {
+        userId: user.id,
+        password: user.password,
+      },
+    });
+    const hashedPassword = await bcrypt.hash(newPassword.password, 10);
+    await this.prismaService.user.update({
+      where: {
+        id: uid,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
     return { data: { success: true } };
   }
 

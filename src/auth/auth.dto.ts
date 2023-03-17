@@ -47,12 +47,12 @@ export class VerifyPasswordDto extends createZodDto(
   extendApi(VerifyPassword),
 ) {}
 
-const ChangePassword = z
-  .object({
-    newPassword: ZPassword.pick({ password: true }),
-  })
-  .merge(ZPassword)
-  .merge(ZMFACode);
+const ChangePassword = z.object({
+  newPassword: ZPassword.pick({ password: true }),
+  token: z.string({
+    required_error: 'Token is required',
+  }),
+});
 export class ChangePasswordDto extends createZodDto(
   extendApi(ChangePassword),
 ) {}
