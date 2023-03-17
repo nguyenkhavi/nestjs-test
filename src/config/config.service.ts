@@ -26,6 +26,8 @@ export const appConfig = registerAs('app', () => ({
   port:
     parseInt((process.env.APP_PORT || process.env.PORT) as string, 10) || 8000,
   apiPrefix: process.env.API_PREFIX || 'api',
+  throttleTTL: process.env.THROTTLE_TTL || 60,
+  throttleLimit: process.env.THROTTLE_LIMIT || 30,
 }));
 
 export const sendgridConfig = registerAs('sendgrid', () => ({
