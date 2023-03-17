@@ -54,9 +54,6 @@ export class UserProfileService {
     });
     return { data: updated };
   }
-  // create(createUserProfileDto: CreateUserProfileDto) {
-  //   return 'This action adds a new userProfile';
-  // }
 
   // findAll() {
   //   return `This action returns all userProfile`;
