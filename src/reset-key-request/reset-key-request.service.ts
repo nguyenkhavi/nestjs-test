@@ -39,6 +39,7 @@ export class ResetKeyRequestService {
         password,
         mfaCode,
       },
+      false,
     );
 
     if (verifiedData.mfaRequired) {

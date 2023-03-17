@@ -29,6 +29,7 @@ import { IRequestClient, JWTPayload } from 'src/auth/auth.interface';
 import { ConfigService } from 'src/config/config.service';
 import { Cache } from 'cache-manager';
 import {
+  _24H_MILLISECONDS_,
   // MAX_CONFIRM_SENT_PER_DAY,
   // MAX_FORGOT_PASS_SENT_PER_DAY,
   // _24H_MILLISECONDS_,
@@ -703,7 +704,11 @@ export class AuthService {
     });
   }
 
-  async verifyPassword(uid: string, body: VerifyPasswordDto) {
+  async verifyPassword(
+    uid: string,
+    body: VerifyPasswordDto,
+    tokenGenerated = true,
+  ) {
     const { mfaCode, password } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
@@ -735,16 +740,19 @@ export class AuthService {
       }
     }
 
-    const payload: JWTPayload = {
-      uid,
-    };
-    const token = this.jwtService.sign(payload, {
-      secret: this.configService.get('jwt.confirmSecret'),
-      expiresIn: this.configService.get('jwt.confirmExpires'),
-    });
+    let token: string = null;
+    if (tokenGenerated) {
+      const payload: JWTPayload = {
+        uid,
+      };
+      token = this.jwtService.sign(payload, {
+        secret: this.configService.get('jwt.confirmSecret'),
+        expiresIn: this.configService.get('jwt.confirmExpires'),
+      });
 
-    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
-    await this.cacheService.set(LATEST_TOKEN_KEY, token);
+      const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+      await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
+    }
 
     return { data: { success: true, token } };
   }
@@ -781,6 +789,7 @@ export class AuthService {
         password: hashedPassword,
       },
     });
+    await this.cacheService.del(LATEST_TOKEN_KEY);
     return { data: { success: true } };
   }
 
