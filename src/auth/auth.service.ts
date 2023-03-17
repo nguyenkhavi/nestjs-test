@@ -380,6 +380,7 @@ export class AuthService {
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
     });
+    await this.cacheService.del(LATEST_TOKEN_KEY);
 
     return {};
   }
