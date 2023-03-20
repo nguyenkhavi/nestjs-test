@@ -3,7 +3,6 @@ import {
   Body,
   Controller,
   Head,
-  Headers,
   InternalServerErrorException,
   Param,
   Query,
@@ -16,6 +15,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from 'src/config/config.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { firstValueFrom } from 'rxjs';
+import { Authorization, Session } from 'src/utils/decorators';
 
 @Controller('reverse')
 @UseGuards(JwtAuthGuard)
@@ -31,7 +31,8 @@ export class ProxyController {
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
-    @Headers() headers,
+    @Authorization() authorization: string,
+    @Session() session: string,
     @Param() param,
   ) {
     const url = param['*'];
@@ -46,7 +47,10 @@ export class ProxyController {
           url,
           data: body,
           params: query,
-          headers: headers,
+          headers: {
+            authorization,
+            session,
+          },
         }),
       );
       return { data };
@@ -61,7 +65,8 @@ export class ProxyController {
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
-    @Headers() headers,
+    @Authorization() authorization: string,
+    @Session() session: string,
     @Param() param,
   ) {
     const url = param['*'];
@@ -78,8 +83,8 @@ export class ProxyController {
           data: body,
           params: query,
           headers: {
-            session: '123',
-            ...headers,
+            authorization,
+            session,
           },
         }),
       );
