@@ -4,6 +4,7 @@ import {
   Controller,
   Head,
   Headers,
+  InternalServerErrorException,
   Param,
   Query,
   Request,
@@ -14,6 +15,7 @@ import { IncomingMessage } from 'http';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from 'src/config/config.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('reverse')
 @UseGuards(JwtAuthGuard)
@@ -25,7 +27,7 @@ export class ProxyController {
   ) {}
 
   @All('mainnet/*')
-  reverseMainnet(
+  async reverseMainnet(
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
@@ -34,20 +36,28 @@ export class ProxyController {
   ) {
     const url = param['*'];
     console.log(
-      `[*]: Proxying ${req.method} request originally made to '${url}'...`,
+      `[*][MAINNET]: Proxying ${req.method} request originally made to '${url}'...`,
     );
-    return this.httpService.request({
-      baseURL: this.configService.get('proxy.mainnetUrl'),
-      method: req.method,
-      url,
-      data: body,
-      params: query,
-      headers: headers,
-    });
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.request({
+          baseURL: this.configService.get('proxy.mainnetUrl'),
+          method: req.method,
+          url,
+          data: body,
+          params: query,
+          headers: headers,
+        }),
+      );
+      return { data };
+    } catch (e) {
+      console.log('[*][MAINNET]: Proxying Error', e);
+      throw new InternalServerErrorException(e?.message);
+    }
   }
 
   @All('testnet/*')
-  reverseTestnet(
+  async reverseTestnet(
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
@@ -56,16 +66,28 @@ export class ProxyController {
   ) {
     const url = param['*'];
     console.log(
-      `[*]: Proxying ${req.method} request originally made to '${url}'...`,
+      `[*][TESTNET]: Proxying ${req.method} request originally made to '${url}'...`,
     );
-    return this.httpService.request({
-      baseURL: this.configService.get('proxy.testnetUrl'),
-      method: req.method,
-      url,
-      data: body,
-      params: query,
-      headers: headers,
-    });
+
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.request({
+          baseURL: this.configService.get('proxy.testnetUrl'),
+          method: req.method,
+          url,
+          data: body,
+          params: query,
+          headers: {
+            session: '123',
+            ...headers,
+          },
+        }),
+      );
+      return { data };
+    } catch (e) {
+      console.log('[*][TESTNET]: Proxying Error', e);
+      throw new InternalServerErrorException(e?.message);
+    }
   }
 
   // Use this to show the UI Swagger
