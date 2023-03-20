@@ -705,7 +705,7 @@ export class AuthService {
 
     const passwordMatching = await bcrypt.compare(password, user.password);
     if (!passwordMatching || !user) {
-      throw new UnauthorizedException('Incorrect credential!');
+      throw new UnauthorizedException('Incorrect password!');
     }
 
     const mfaRequired = !!user.mfaSecret;
@@ -720,7 +720,7 @@ export class AuthService {
         const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
 
         if (!mfaValid) {
-          throw new UnauthorizedException('Incorrect credential!');
+          throw new UnauthorizedException('Incorrect MFA code!');
         }
       }
     }
