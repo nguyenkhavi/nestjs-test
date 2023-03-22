@@ -17,6 +17,7 @@ import {
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SecretShardDto,
   SSODto,
   UserRegisterDto,
   VerifyPasswordDto,
@@ -37,7 +38,7 @@ import {
 import { EUserStatus, User } from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
-import { formatBrowser } from 'src/utils/fn';
+import { formatBrowser, generateKey } from 'src/utils/fn';
 import { SsoService } from 'src/sso/sso.service';
 import { UserProfileService } from 'src/user-profile/user-profile.service';
 import { TenantService } from 'src/tenant/tenant.service';
@@ -812,5 +813,11 @@ export class AuthService {
       take: 1,
     });
     return historyRecord || null;
+  }
+  generateSecretShard(body: SecretShardDto) {
+    const secretShard = generateKey(body.password);
+    return {
+      data: { secretShard },
+    };
   }
 }

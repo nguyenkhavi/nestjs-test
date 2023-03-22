@@ -21,6 +21,7 @@ import {
   PutPasswordDto,
   RefreshTokenDto,
   ResendConfirmEmailDto,
+  SecretShardDto,
   SSODto,
   UserRegisterDto,
   VerifyPasswordDto,
@@ -166,5 +167,13 @@ export class AuthController {
   })
   refreshToken(@Body() body: RefreshTokenDto) {
     return this.authService.refreshToken(body);
+  }
+
+  @Post('generate-secret-shard')
+  @ApiOperation({
+    summary: 'Generate secret shard',
+  })
+  generateSecretShard(@Body() body: SecretShardDto) {
+    return this.authService.generateSecretShard(body);
   }
 }

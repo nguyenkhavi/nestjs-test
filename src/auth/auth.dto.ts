@@ -81,3 +81,6 @@ const SSO = z
   .merge(ZMFACode)
   .merge(ZTimezone.required());
 export class SSODto extends createZodDto(extendApi(SSO)) {}
+
+const SecretShard = z.object({}).merge(ZPassword);
+export class SecretShardDto extends createZodDto(extendApi(SecretShard)) {}
