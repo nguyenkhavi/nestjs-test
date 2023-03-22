@@ -10,12 +10,14 @@ import { AuthService } from 'src/auth/auth.service';
 import { ConfigService } from 'src/config/config.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  CheckRevealKeyDto,
   ResetKeyDto,
   VerifyResetKeyDto,
   VerifyResetKeySSODto,
 } from 'src/reset-key-request/reset-key-request.dto';
 import { TenantService } from 'src/tenant/tenant.service';
 import { _5MIN_MILLISECONDS_ } from 'src/utils/constants';
+import { ERequestStatus } from '@prisma/client';
 
 @Injectable()
 export class ResetKeyRequestService {
@@ -59,20 +61,36 @@ export class ResetKeyRequestService {
     });
     const requestId = request.id;
 
-    const { data } = await firstValueFrom(
-      this.httpService.request({
-        baseURL: BASE_URL,
-        method: 'POST',
-        url: `v0/${tenantId}/${domain}/projects/${projectId}/accessKey`,
-        headers: {
-          'api-key': API_KEY,
-          Authorization: auth,
-          session,
-          requestId,
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.request({
+          baseURL: BASE_URL,
+          method: 'POST',
+          url: `v0/${tenantId}/${domain}/projects/${projectId}/accessKey`,
+          headers: {
+            'api-key': API_KEY,
+            Authorization: auth,
+            session,
+            requestId,
+          },
+        }),
+      );
+      await this.prismaService.resetKeyRequest.update({
+        where: {
+          id: requestId,
         },
-      }),
-    );
-    return { data };
+        data: { status: ERequestStatus.SUCCESS },
+      });
+      return { data };
+    } catch (e) {
+      await this.prismaService.resetKeyRequest.update({
+        where: {
+          id: requestId,
+        },
+        data: { status: ERequestStatus.ERROR },
+      });
+      throw e;
+    }
   }
 
   async verifyResetKey(dto: VerifyResetKeyDto, userId: string) {
@@ -123,5 +141,19 @@ export class ResetKeyRequestService {
     }
 
     return { data: { success: true } };
+  }
+
+  async checkRevealKey(dto: CheckRevealKeyDto, userId: string) {
+    const { projectId } = dto;
+    const request = await this.prismaService.resetKeyRequest.findFirst({
+      where: {
+        userId,
+        projectId,
+        status: ERequestStatus.SUCCESS,
+      },
+    });
+    return {
+      data: request,
+    };
   }
 }

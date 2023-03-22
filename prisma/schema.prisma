@@ -18,6 +18,12 @@ enum EEnviroment {
   TESTNET
 }
 
+enum ERequestStatus {
+  PENDING
+  SUCCESS
+  ERROR
+}
+
 model User {
   id            String       @id @default(uuid())
   email         String?      @db.VarChar(255)
@@ -87,6 +93,7 @@ model ResetKeyRequest {
   userId       String
   user         User @relation(fields: [userId], references: [id])
   projectId    String
+  status       ERequestStatus @default(PENDING)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import {
+  CheckRevealKeyDto,
   ResetKeyDto,
   VerifyResetKeyDto,
   VerifyResetKeySSODto,
@@ -28,6 +29,16 @@ export class ResetKeyRequestController {
     @Authorization() auth: string,
   ) {
     return this.resetKeyRequestService.resetKey(dto, uid, session, auth);
+  }
+
+  @Post('check-reveal-key')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Check weather user can reveal key or not',
+  })
+  checkRevealKey(@Body() dto: CheckRevealKeyDto, @Uid() uid: string) {
+    return this.resetKeyRequestService.checkRevealKey(dto, uid);
   }
 
   @Post('verify-reset-key')

@@ -33,3 +33,10 @@ const VerifyResetKeySSO = z
 export class VerifyResetKeySSODto extends createZodDto(
   extendApi(VerifyResetKeySSO),
 ) {}
+
+const CheckRevealKey = z.object({
+  projectId: z.string().trim().nonempty(),
+});
+export class CheckRevealKeyDto extends createZodDto(
+  extendApi(CheckRevealKey),
+) {}
