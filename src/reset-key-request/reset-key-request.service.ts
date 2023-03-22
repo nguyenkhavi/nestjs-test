@@ -153,7 +153,7 @@ export class ResetKeyRequestService {
       },
     });
     return {
-      data: request,
+      data: { request, canRevealKey: !request },
     };
   }
 }
