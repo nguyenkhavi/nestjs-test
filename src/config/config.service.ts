@@ -35,6 +35,7 @@ export const sendgridConfig = registerAs('sendgrid', () => ({
   confirmEmailTemplateId: process.env.CONFIRM_EMAIL_TEMPLATE_ID,
   forgotPasswordEmailTemplateId: process.env.FORGOT_PASSWORD_EMAIL_TEMPLATE_ID,
   resetPasswordEmailTemplateId: process.env.RESET_PASSWORD_EMAIL_TEMPLATE_ID,
+  activeSecretShard: process.env.ACTIVE_SECRET_SHARD_EMAIL_TEMPLATE_ID,
   contactUsUrl: process.env.CONTACT_US_URL,
   termsOfUse: process.env.TERMS_OF_USE_URL,
   supportUrl: process.env.SUPPORT_URL,

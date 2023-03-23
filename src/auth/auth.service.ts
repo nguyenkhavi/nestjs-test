@@ -849,7 +849,38 @@ export class AuthService {
     });
     return historyRecord || null;
   }
-  generateSecretShard(body: SecretShardDto) {
+
+  generateActiveSecretShardUrl(origin: string) {
+    return origin;
+  }
+
+  async generateSecretShard(
+    body: SecretShardDto,
+    id: string,
+    requestClient: IRequestClient,
+  ) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id,
+      },
+    });
+
+    await this.mailService.send({
+      to: user.email,
+      from: 'huy.pham@spiritlabs.co',
+      templateId: 'sendgrid.activeSecretShard',
+      dynamicTemplateData: {
+        urlActiveSecretShard: this.generateActiveSecretShardUrl(
+          requestClient.origin,
+        ),
+        browser: formatBrowser(requestClient.userAgent),
+        ipAddress: requestClient.ip,
+        emailWasSentTo: user.email,
+        urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+        urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+      },
+    });
+
     const secretShard = generateKey(body.password);
     return {
       data: { secretShard },

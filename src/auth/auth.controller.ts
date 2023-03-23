@@ -177,11 +177,23 @@ export class AuthController {
   }
 
   @Post('generate-secret-shard')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Generate secret shard',
   })
-  generateSecretShard(@Body() body: SecretShardDto) {
-    return this.authService.generateSecretShard(body);
+  generateSecretShard(
+    @Body() body: SecretShardDto,
+    @Uid() uid: string,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.generateSecretShard(body, uid, {
+      ip,
+      userAgent,
+      origin,
+    });
   }
 
   @Post('mainnet-tenant')

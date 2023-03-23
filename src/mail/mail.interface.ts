@@ -25,6 +25,15 @@ export interface IPasswordResetData {
   urlTermsOfUse: string;
 }
 
+export interface IActiveSecretShardData {
+  urlActiveSecretShard: string;
+  browser: string;
+  ipAddress: string;
+  emailWasSentTo: string;
+  urlContactUs: string;
+  urlTermsOfUse: string;
+}
+
 type IBaseMail<T, D> = SendGrid.MailDataRequired & {
   templateId: T;
   dynamicTemplateData: D;
@@ -32,4 +41,5 @@ type IBaseMail<T, D> = SendGrid.MailDataRequired & {
 export type IMail =
   | IBaseMail<'sendgrid.confirmEmailTemplateId', IEmailVerificationData>
   | IBaseMail<'sendgrid.forgotPasswordEmailTemplateId', IForgotPasswordData>
-  | IBaseMail<'sendgrid.resetPasswordEmailTemplateId', IPasswordResetData>;
+  | IBaseMail<'sendgrid.resetPasswordEmailTemplateId', IPasswordResetData>
+  | IBaseMail<'sendgrid.activeSecretShard', IActiveSecretShardData>;
