@@ -241,7 +241,6 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
-          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -571,7 +570,6 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
-          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -653,7 +651,6 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
-          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -695,11 +692,7 @@ export class AuthService {
     });
   }
 
-  async verifyPassword(
-    uid: string,
-    body: VerifyPasswordDto,
-    tokenGenerated = true,
-  ) {
+  async verifyPassword(uid: string, body: VerifyPasswordDto) {
     const { mfaCode, password } = body;
     const user = await this.prismaService.user.findFirstOrThrow({
       where: {
@@ -731,21 +724,54 @@ export class AuthService {
       }
     }
 
-    let token: string = null;
-    if (tokenGenerated) {
-      const payload: JWTPayload = {
-        uid,
-      };
-      token = this.jwtService.sign(payload, {
-        secret: this.configService.get('jwt.confirmSecret'),
-        expiresIn: this.configService.get('jwt.confirmExpires'),
-      });
+    const payload: JWTPayload = {
+      uid,
+    };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('jwt.confirmSecret'),
+      expiresIn: this.configService.get('jwt.confirmExpires'),
+    });
 
-      const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
-      await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
-    }
+    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+    await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
 
     return { data: { success: true, token } };
+  }
+
+  async checkPassword2FA(uid: string, password: string, mfaCode: string) {
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: {
+        id: uid,
+      },
+    });
+
+    const passwordMatching = await bcrypt.compare(password, user.password);
+    if (!passwordMatching || !user) {
+      throw new UnauthorizedException('Incorrect password!');
+    }
+
+    const mfaRequired = !!user.mfaSecret;
+    if (mfaRequired) {
+      if (!mfaCode) {
+        return {
+          data: {
+            mfaRequired: true,
+          },
+        };
+      } else {
+        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+
+        if (!mfaValid) {
+          throw new UnauthorizedException('Incorrect MFA code!');
+        }
+      }
+    }
+
+    return {
+      data: {
+        success: true,
+      },
+    };
   }
 
   async changePassword(uid: string, body: ChangePasswordDto) {
@@ -870,7 +896,6 @@ export class AuthService {
           userId: user.id,
           signNodeId: mainnetTenant.signNodeId,
           tenantId: mainnetTenant.tenantId,
-          custonomyUserId: mainnetTenant.userId,
           env: EEnvironment.MAINNET,
         },
       });
