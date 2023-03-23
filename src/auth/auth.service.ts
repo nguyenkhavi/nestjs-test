@@ -587,6 +587,10 @@ export class AuthService {
       throw new BadRequestException('Cannot verify account from SSO Provider');
     }
 
+    if (!profile.email) {
+      throw new BadRequestException('Facebook do not provide email');
+    }
+
     const { id: facebookUid, email } = profile;
 
     let user = await this.prismaService.user.findFirst({
