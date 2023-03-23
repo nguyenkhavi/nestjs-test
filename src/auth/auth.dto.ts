@@ -84,3 +84,10 @@ export class SSODto extends createZodDto(extendApi(SSO)) {}
 
 const SecretShard = z.object({}).merge(ZPassword);
 export class SecretShardDto extends createZodDto(extendApi(SecretShard)) {}
+
+const CreateMainnetTenant = z.object({
+  registerMsg: z.string().trim().nonempty(),
+});
+export class CreateMainnetTenantDto extends createZodDto(
+  extendApi(CreateMainnetTenant),
+) {}

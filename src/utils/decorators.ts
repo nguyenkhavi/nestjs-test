@@ -39,7 +39,7 @@ export const Authorization = createParamDecorator(
       .switchToHttp()
       .getRequest<Request & { user?: JWTPayload }>();
 
-    return request.headers['Authorization'];
+    return request.headers['authorization'] || request.headers['Authorization'];
   },
 );
 

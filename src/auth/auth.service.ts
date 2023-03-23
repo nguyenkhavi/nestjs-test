@@ -7,11 +7,13 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
   ChangePasswordDto,
   ConfirmEmailDto,
+  CreateMainnetTenantDto,
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
@@ -35,7 +37,7 @@ import {
   _30MIN_MILLISECONDS_,
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
-import { EUserStatus, User } from '@prisma/client';
+import { EEnviroment as EEnvironment, EUserStatus, User } from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
 import { formatBrowser, generateKey } from 'src/utils/fn';
@@ -822,5 +824,59 @@ export class AuthService {
     return {
       data: { secretShard },
     };
+  }
+
+  async upsertMainnetTenant(
+    body: CreateMainnetTenantDto,
+    userId: string,
+    authorization: string,
+    session: string,
+  ) {
+    const { registerMsg } = body;
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+    });
+    const existTenant = await this.prismaService.userTenant.findFirst({
+      where: {
+        userId,
+        env: EEnvironment.MAINNET,
+      },
+    });
+    if (existTenant) {
+      throw new ConflictException('User has been created Mainnet already');
+    }
+
+    const token = authorization.split(' ')[1];
+
+    const mainnetTenant = await this.tenantService.createMainnetTenant({
+      timezone: user.timezone,
+      session,
+      token,
+    });
+
+    const updateResult = await this.tenantService.updateRegisterMessage(
+      mainnetTenant.tenantId,
+      'MAIN',
+      token,
+      mainnetTenant.userId,
+      registerMsg,
+    );
+
+    if (updateResult) {
+      const tenant = await this.prismaService.userTenant.create({
+        data: {
+          userId: user.id,
+          signNodeId: mainnetTenant.signNodeId,
+          tenantId: mainnetTenant.tenantId,
+          custonomyUserId: mainnetTenant.userId,
+          env: EEnvironment.MAINNET,
+        },
+      });
+      return { data: { tenant } };
+    } else {
+      throw new ServiceUnavailableException();
+    }
   }
 }

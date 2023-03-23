@@ -16,6 +16,7 @@ import {
 import {
   ChangePasswordDto,
   ConfirmEmailDto,
+  CreateMainnetTenantDto,
   ForgotPasswordDto,
   LoginDto,
   PutPasswordDto,
@@ -27,7 +28,13 @@ import {
   VerifyPasswordDto,
 } from 'src/auth/auth.dto';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
-import { Origin, Uid, UserAgent } from 'src/utils/decorators';
+import {
+  Origin,
+  Uid,
+  UserAgent,
+  Authorization,
+  Session,
+} from 'src/utils/decorators';
 import { IUserAgent } from 'src/utils/interface';
 import { AuthService } from './auth.service';
 
@@ -175,5 +182,25 @@ export class AuthController {
   })
   generateSecretShard(@Body() body: SecretShardDto) {
     return this.authService.generateSecretShard(body);
+  }
+
+  @Post('mainnet-tenant')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create Mainnet Tenant',
+  })
+  upsertMainnetTenant(
+    @Body() body: CreateMainnetTenantDto,
+    @Uid() uid: string,
+    @Authorization() authorization: string,
+    @Session() session: string,
+  ) {
+    return this.authService.upsertMainnetTenant(
+      body,
+      uid,
+      authorization,
+      session,
+    );
   }
 }

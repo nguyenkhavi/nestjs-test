@@ -35,6 +35,59 @@ export class TenantService {
     return data;
   }
 
+  async updateRegisterMessage(
+    tenant: string,
+    domain: string,
+    session: string,
+    custonomyUserId: string,
+    registerMsg: string,
+  ) {
+    const { data } = await firstValueFrom(
+      this.httpService.request({
+        baseURL: this.configService.get('proxy.mainnetUrl'),
+        method: 'PATCH',
+        url: `v0/${tenant}/${domain}/users`,
+        headers: {
+          session,
+        },
+        params: {
+          id: custonomyUserId,
+        },
+        data: {
+          id: custonomyUserId,
+          action: 'registermanagednode',
+          authorizerId: custonomyUserId,
+          registerMsg,
+        },
+      }),
+    );
+
+    return data;
+  }
+
+  async createMainnetTenant(dto: CreateTenantDto) {
+    const { token, timezone, session } = dto;
+    const { data } = await firstValueFrom(
+      this.httpService.request<
+        Pick<UserTenant, 'signNodeId' | 'tenantId'> & { userId: string }
+      >({
+        baseURL: this.configService.get('proxy.mainnetUrl'),
+        method: 'POST',
+        url: 'v0/tenants',
+        headers: {
+          'api-key': this.configService.get('proxy.mainnetApiKey'),
+          Authorization: `Bearer ${token}`,
+          session,
+        },
+        data: {
+          timezone,
+        },
+      }),
+    );
+
+    return data;
+  }
+
   async validateTenantId(tenantId: string, userId: string) {
     const tenant = await this.prismaService.userTenant.findFirstOrThrow({
       where: {
