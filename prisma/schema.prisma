@@ -79,6 +79,7 @@ model UserTenant {
   id         String      @id @default(uuid())
   userId     String
   users      User        @relation(fields: [userId], references: [id])
+  custonomyUserId String?
   tenantId   String
   signNodeId String
   env        EEnviroment @default(TESTNET)

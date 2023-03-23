@@ -239,6 +239,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -568,6 +569,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -649,6 +651,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 

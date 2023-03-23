@@ -16,7 +16,9 @@ export class TenantService {
   async createTestnetTenant(dto: CreateTenantDto) {
     const { token, timezone, session } = dto;
     const { data } = await firstValueFrom(
-      this.httpService.request<Pick<UserTenant, 'signNodeId' | 'tenantId'>>({
+      this.httpService.request<
+        Pick<UserTenant, 'signNodeId' | 'tenantId'> & { userId: string }
+      >({
         baseURL: this.configService.get('proxy.testnetUrl'),
         method: 'POST',
         url: 'v0/tenants',
