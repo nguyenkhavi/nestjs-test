@@ -51,13 +51,40 @@ export class TenantService {
           session,
         },
         params: {
-          id: custonomyUserId,
+          action: 'registermanagednode',
         },
         data: {
           id: custonomyUserId,
           action: 'registermanagednode',
           authorizerId: custonomyUserId,
           registerMsg,
+        },
+      }),
+    );
+
+    return data;
+  }
+
+  async activeSecretShard(
+    tenant: string,
+    domain: string,
+    session: string,
+    custonomyUserId: string,
+  ) {
+    const { data } = await firstValueFrom(
+      this.httpService.request({
+        baseURL: this.configService.get('proxy.mainnetUrl'),
+        method: 'PATCH',
+        url: `v0/${tenant}/${domain}/users`,
+        headers: {
+          session,
+        },
+        params: {
+          // action: "default",
+        },
+        data: {
+          status: 'ACTIVE',
+          id: custonomyUserId,
         },
       }),
     );

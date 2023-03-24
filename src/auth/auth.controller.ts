@@ -14,6 +14,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+  ActiveMainnetTenantDto,
   ChangePasswordDto,
   ConfirmEmailDto,
   CreateMainnetTenantDto,
@@ -184,16 +185,9 @@ export class AuthController {
   })
   generateSecretShard(
     @Body() body: SecretShardDto,
-    @Uid() uid: string,
-    @Ip() ip: string,
-    @UserAgent() userAgent: IUserAgent,
-    @Origin() origin: string,
+    // @Uid() uid: string,
   ) {
-    return this.authService.generateSecretShard(body, uid, {
-      ip,
-      userAgent,
-      origin,
-    });
+    return this.authService.generateSecretShard(body);
   }
 
   @Post('mainnet-tenant')
@@ -207,12 +201,28 @@ export class AuthController {
     @Uid() uid: string,
     @Authorization() authorization: string,
     @Session() session: string,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
   ) {
     return this.authService.upsertMainnetTenant(
       body,
       uid,
       authorization,
       session,
+      {
+        ip,
+        userAgent,
+        origin,
+      },
     );
+  }
+
+  @Post('active-mainnet-tenant')
+  @ApiOperation({
+    summary: 'Active Mainnet Tenant',
+  })
+  activeMainnetTenant(@Body() body: ActiveMainnetTenantDto) {
+    return this.authService.activeMainnetTenant(body);
   }
 }

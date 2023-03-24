@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
+  ActiveMainnetTenantDto,
   ChangePasswordDto,
   ConfirmEmailDto,
   CreateMainnetTenantDto,
@@ -44,6 +45,7 @@ import { formatBrowser, generateKey } from 'src/utils/fn';
 import { SsoService } from 'src/sso/sso.service';
 import { UserProfileService } from 'src/user-profile/user-profile.service';
 import { TenantService } from 'src/tenant/tenant.service';
+import { ISecretShardPayload } from 'src/tenant/tenant.interface';
 
 @Injectable()
 export class AuthService {
@@ -82,8 +84,8 @@ export class AuthService {
     return `${origin}/mail-handler/verify-email?token=${token}`;
   }
 
-  private generateActiveSecretShardUrl(origin: string) {
-    return `${origin}/mail-handler/active-secret-shard`;
+  private generateActiveSecretShardUrl(origin: string, token: string) {
+    return `${origin}/mail-handler/active-secret-shard?token=${token}`;
   }
 
   private generateForgotPasswordUrl(origin: string, token: string) {
@@ -859,30 +861,14 @@ export class AuthService {
 
   async generateSecretShard(
     body: SecretShardDto,
-    id: string,
-    requestClient: IRequestClient,
+    // id: string,
+    // requestClient: IRequestClient,
   ) {
-    const user = await this.prismaService.user.findUniqueOrThrow({
-      where: {
-        id,
-      },
-    });
-
-    await this.mailService.send({
-      to: user.email,
-      from: 'huy.pham@spiritlabs.co',
-      templateId: 'sendgrid.activeSecretShard',
-      dynamicTemplateData: {
-        urlActiveSecretShard: this.generateActiveSecretShardUrl(
-          requestClient.origin,
-        ),
-        browser: formatBrowser(requestClient.userAgent),
-        ipAddress: requestClient.ip,
-        emailWasSentTo: user.email,
-        urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
-        urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
-      },
-    });
+    // const user = await this.prismaService.user.findUniqueOrThrow({
+    //   where: {
+    //     id,
+    //   },
+    // });
 
     const secretShard = generateKey(body.password);
     return {
@@ -895,6 +881,7 @@ export class AuthService {
     userId: string,
     authorization: string,
     session: string,
+    requestClient: IRequestClient,
   ) {
     const { registerMsg } = body;
     const user = await this.prismaService.user.findUniqueOrThrow({
@@ -929,6 +916,33 @@ export class AuthService {
     );
 
     if (updateResult) {
+      const payload: ISecretShardPayload = {
+        uid: userId,
+        custonomyUserId: mainnetTenant.userId,
+        domain: 'MAIN',
+        tenant: mainnetTenant.tenantId,
+      };
+
+      const token = this.jwtService.sign(payload, {
+        secret: this.configService.get('jwt.confirmSecret'),
+      });
+
+      await this.mailService.send({
+        to: user.email,
+        from: 'huy.pham@spiritlabs.co',
+        templateId: 'sendgrid.activeSecretShard',
+        dynamicTemplateData: {
+          urlActiveSecretShard: this.generateActiveSecretShardUrl(
+            requestClient.origin,
+            token,
+          ),
+          browser: formatBrowser(requestClient.userAgent),
+          ipAddress: requestClient.ip,
+          emailWasSentTo: user.email,
+          urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+          urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+        },
+      });
       const tenant = await this.prismaService.userTenant.create({
         data: {
           userId: user.id,
@@ -940,6 +954,56 @@ export class AuthService {
       return { data: { tenant } };
     } else {
       throw new ServiceUnavailableException();
+    }
+  }
+
+  async activeMainnetTenant(body: ActiveMainnetTenantDto) {
+    const { token } = body;
+    try {
+      const payload: ISecretShardPayload = this.jwtService.verify(token, {
+        secret: this.configService.get('jwt.confirmSecret'),
+      });
+      const { uid } = payload;
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+        },
+      });
+      const jwtPayload: JWTPayload = {
+        uid: user.id,
+      };
+
+      const session = await this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('jwt.accessSecret'),
+        expiresIn: this.configService.get('jwt.accessExpires'),
+      });
+
+      const activeResult = await this.tenantService.activeSecretShard(
+        payload.tenant,
+        payload.domain,
+        session,
+        payload.custonomyUserId,
+      );
+      console.log({ activeResult });
+
+      return { data: activeResult };
+    } catch (e) {
+      console.log({ e });
+
+      const payload = this.jwtService.decode(token) as ISecretShardPayload;
+      const { uid } = payload;
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: {
+          id: uid,
+        },
+      });
+
+      return {
+        data: {
+          tokenExpired: true,
+          email: user.email,
+        },
+      };
     }
   }
 }

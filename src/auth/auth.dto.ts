@@ -91,3 +91,12 @@ const CreateMainnetTenant = z.object({
 export class CreateMainnetTenantDto extends createZodDto(
   extendApi(CreateMainnetTenant),
 ) {}
+
+const ActiveMainnetTenant = z.object({
+  token: z.string({
+    required_error: 'Token is required',
+  }),
+});
+export class ActiveMainnetTenantDto extends createZodDto(
+  extendApi(ActiveMainnetTenant),
+) {}
