@@ -82,6 +82,10 @@ export class AuthService {
     return `${origin}/mail-handler/verify-email?token=${token}`;
   }
 
+  private generateActiveSecretShardUrl(origin: string) {
+    return `${origin}/mail-handler/active-secret-shard`;
+  }
+
   private generateForgotPasswordUrl(origin: string, token: string) {
     return `${origin}/mail-handler/forgot-password?token=${token}`;
   }
@@ -749,7 +753,10 @@ export class AuthService {
       },
     });
 
-    const passwordMatching = await bcrypt.compare(password, user.password);
+    const isSSO = !!user.googleUid || !!user.facebookUid;
+    const passwordMatching = isSSO
+      ? true
+      : await bcrypt.compare(password, user.password);
     if (!passwordMatching || !user) {
       throw new UnauthorizedException('Incorrect password!');
     }
@@ -848,10 +855,6 @@ export class AuthService {
       take: 1,
     });
     return historyRecord || null;
-  }
-
-  generateActiveSecretShardUrl(origin: string) {
-    return origin;
   }
 
   async generateSecretShard(

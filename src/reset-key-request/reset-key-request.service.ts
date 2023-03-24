@@ -37,7 +37,6 @@ export class ResetKeyRequestService {
     const { mfaCode, password, projectId, tenantId, domain } = dto;
     const { data: verifiedData } = await this.authService.checkPassword2FA(
       userId,
-
       password,
       mfaCode,
     );
