@@ -25,10 +25,10 @@ export class TenantService {
         headers: {
           'api-key': this.configService.get('proxy.testnetApiKey'),
           Authorization: `Bearer ${token}`,
-          session,
         },
         data: {
           timezone,
+          session,
         },
       }),
     );
@@ -104,10 +104,10 @@ export class TenantService {
         headers: {
           'api-key': this.configService.get('proxy.mainnetApiKey'),
           Authorization: `Bearer ${token}`,
-          session,
         },
         data: {
           timezone,
+          session,
         },
       }),
     );
