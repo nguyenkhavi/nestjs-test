@@ -238,7 +238,6 @@ export class AuthService {
 
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        token: data.accessToken,
         session: data.accessToken,
       });
 
@@ -567,7 +566,6 @@ export class AuthService {
     if (!data.data.tenants?.length) {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        token: data.accessToken,
         session: token,
       });
 
@@ -652,7 +650,6 @@ export class AuthService {
     if (!data.data.tenants?.length) {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        token: data.accessToken,
         session: token,
       });
 
@@ -904,7 +901,6 @@ export class AuthService {
     const mainnetTenant = await this.tenantService.createMainnetTenant({
       timezone: user.timezone,
       session,
-      token,
     });
 
     const updateResult = await this.tenantService.updateRegisterMessage(

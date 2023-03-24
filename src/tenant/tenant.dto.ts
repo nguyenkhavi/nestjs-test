@@ -5,7 +5,6 @@ import { extendApi } from '@anatine/zod-openapi';
 import { ZTimezone } from 'src/utils/zod';
 const CreateTenant = z
   .object({
-    token: z.string(),
     session: z.string(),
   })
   .merge(ZTimezone);

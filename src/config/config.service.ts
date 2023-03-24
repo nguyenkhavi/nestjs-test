@@ -28,6 +28,7 @@ export const appConfig = registerAs('app', () => ({
   apiPrefix: process.env.API_PREFIX || 'api',
   throttleTTL: process.env.THROTTLE_TTL || 60,
   throttleLimit: process.env.THROTTLE_LIMIT || 30,
+  hmacSecretKey: process.env.HMAC_SECRET_KEY,
 }));
 
 export const sendgridConfig = registerAs('sendgrid', () => ({

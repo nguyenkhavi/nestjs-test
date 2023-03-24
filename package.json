@@ -41,6 +41,7 @@
     "elliptic": "^6.5.4",
     "fb": "^2.0.0",
     "google-auth-library": "^8.7.0",
+    "hmac-auth-express": "^8.3.4",
     "openapi3-ts": "^3.2.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
