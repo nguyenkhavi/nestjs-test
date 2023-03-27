@@ -946,6 +946,7 @@ export class AuthService {
           signNodeId: mainnetTenant.signNodeId,
           tenantId: mainnetTenant.tenantId,
           env: EEnvironment.MAINNET,
+          method: body.method,
         },
       });
       return { data: { tenant } };

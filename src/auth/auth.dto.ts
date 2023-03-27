@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createZodDto } from '@anatine/zod-nestjs';
 import { extendApi } from '@anatine/zod-openapi';
 import { ZMFACode, ZPassword, ZTimezone } from 'src/utils/zod';
+import { EMethod } from '@prisma/client';
 
 const UserRegister = z
   .object({
@@ -87,6 +88,7 @@ export class SecretShardDto extends createZodDto(extendApi(SecretShard)) {}
 
 const CreateMainnetTenant = z.object({
   registerMsg: z.string().trim().nonempty(),
+  method: z.nativeEnum(EMethod),
 });
 export class CreateMainnetTenantDto extends createZodDto(
   extendApi(CreateMainnetTenant),

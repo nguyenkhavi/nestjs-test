@@ -18,6 +18,11 @@ enum EEnviroment {
   TESTNET
 }
 
+enum EMethod {
+  AUTH_GENERATE
+  BRING_YOUR_OWN
+}
+
 enum ERequestStatus {
   PENDING
   SUCCESS
@@ -82,6 +87,7 @@ model UserTenant {
   tenantId   String
   signNodeId String
   env        EEnviroment @default(TESTNET)
+  method     EMethod?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
