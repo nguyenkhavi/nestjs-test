@@ -243,7 +243,7 @@ export class AuthService {
         session: `CUSTOM:${data.accessToken}`,
       });
 
-      await this.prismaService.userTenant.create({
+      const tenant = await this.prismaService.userTenant.create({
         data: {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
@@ -251,6 +251,8 @@ export class AuthService {
           custonomyUserId: testTenant.userId,
         },
       });
+
+      data.data.tenants = [tenant];
 
       return { data };
     } catch (e) {
