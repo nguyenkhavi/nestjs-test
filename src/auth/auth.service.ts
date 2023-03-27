@@ -967,6 +967,7 @@ export class AuthService {
           custonomyUserId: mainnetTenant.userId,
         },
       });
+      await this.cacheService.del(LATEST_PASSWORD_VERIFY_TOKEN_KEY);
       return { data: { tenant } };
     } else {
       throw new ServiceUnavailableException();
