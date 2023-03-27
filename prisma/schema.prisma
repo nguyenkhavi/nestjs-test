@@ -19,7 +19,7 @@ enum EEnviroment {
 }
 
 enum EMethod {
-  AUTH_GENERATE
+  AUTO_GENERATE
   BRING_YOUR_OWN
 }
 
