@@ -89,6 +89,9 @@ export class SecretShardDto extends createZodDto(extendApi(SecretShard)) {}
 const CreateMainnetTenant = z.object({
   registerMsg: z.string().trim().nonempty(),
   method: z.nativeEnum(EMethod),
+  token: z.string({
+    required_error: 'Token is required',
+  }),
 });
 export class CreateMainnetTenantDto extends createZodDto(
   extendApi(CreateMainnetTenant),

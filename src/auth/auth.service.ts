@@ -885,6 +885,15 @@ export class AuthService {
     session: TSession,
     requestClient: IRequestClient,
   ) {
+    const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-change-password-token:${userId}`;
+
+    const latestToken = await this.cacheService.get(
+      LATEST_PASSWORD_VERIFY_TOKEN_KEY,
+    );
+    if (latestToken !== body.token) {
+      throw new BadRequestException('Invalid token!');
+    }
+
     const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
 
     const { registerMsg } = body;
