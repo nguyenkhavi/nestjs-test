@@ -744,7 +744,7 @@ export class AuthService {
       expiresIn: this.configService.get('jwt.confirmExpires'),
     });
 
-    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+    const LATEST_TOKEN_KEY = `latest-verify-password-2fa-token:${uid}`;
     await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
 
     return { data: { success: true, token } };
@@ -792,7 +792,7 @@ export class AuthService {
   async changePassword(uid: string, body: ChangePasswordDto) {
     const { newPassword, token } = body;
 
-    const LATEST_TOKEN_KEY = `latest-change-password-token:${uid}`;
+    const LATEST_TOKEN_KEY = `latest-verify-password-2fa-token:${uid}`;
     const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
 
     if (latestToken !== token) {
@@ -885,7 +885,7 @@ export class AuthService {
     session: TSession,
     requestClient: IRequestClient,
   ) {
-    const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-change-password-token:${userId}`;
+    const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-verify-password-2fa-token:${userId}`;
 
     const latestToken = await this.cacheService.get(
       LATEST_PASSWORD_VERIFY_TOKEN_KEY,
