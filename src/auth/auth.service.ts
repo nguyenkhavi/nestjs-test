@@ -256,6 +256,8 @@ export class AuthService {
 
       return { data };
     } catch (e) {
+      console.log({ e });
+
       const payload = this.jwtService.decode(token) as JWTPayload;
       const { uid } = payload;
       const user = await this.prismaService.user.findFirstOrThrow({
