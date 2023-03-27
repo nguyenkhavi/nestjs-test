@@ -1046,7 +1046,7 @@ export class AuthService {
         session,
         payload.custonomyUserId,
       );
-      console.log({ activeResult });
+      await this.cacheService.del(LATEST_TOKEN_KEY);
 
       return { data: activeResult };
     } catch (e) {
