@@ -16,6 +16,7 @@ import { ConfigService } from 'src/config/config.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { firstValueFrom } from 'rxjs';
 import { Authorization, Session } from 'src/utils/decorators';
+import { TSession } from 'src/utils/interface';
 
 @Controller('reverse')
 @UseGuards(JwtAuthGuard)
@@ -32,7 +33,7 @@ export class ProxyController {
     @Query() query,
     @Body() body,
     @Authorization() authorization: string,
-    @Session() session: string,
+    @Session() session: TSession,
     @Param() param,
   ) {
     const url = param['*'];
@@ -66,7 +67,7 @@ export class ProxyController {
     @Query() query,
     @Body() body,
     @Authorization() authorization: string,
-    @Session() session: string,
+    @Session() session: TSession,
     @Param() param,
   ) {
     const url = param['*'];

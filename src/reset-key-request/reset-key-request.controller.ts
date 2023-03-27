@@ -9,6 +9,7 @@ import {
 } from 'src/reset-key-request/reset-key-request.dto';
 import { ResetKeyRequestService } from 'src/reset-key-request/reset-key-request.service';
 import { Authorization, Session, Uid } from 'src/utils/decorators';
+import { TSession } from 'src/utils/interface';
 
 @Controller('reset-key-request')
 @ApiTags('Reset Keys Request')
@@ -25,7 +26,7 @@ export class ResetKeyRequestController {
   resetKey(
     @Body() dto: ResetKeyDto,
     @Uid() uid: string,
-    @Session() session: string,
+    @Session() session: TSession,
     @Authorization() auth: string,
   ) {
     return this.resetKeyRequestService.resetKey(dto, uid, session, auth);

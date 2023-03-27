@@ -36,7 +36,7 @@ import {
   Authorization,
   Session,
 } from 'src/utils/decorators';
-import { IUserAgent } from 'src/utils/interface';
+import { IUserAgent, TSession } from 'src/utils/interface';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -200,7 +200,7 @@ export class AuthController {
     @Body() body: CreateMainnetTenantDto,
     @Uid() uid: string,
     @Authorization() authorization: string,
-    @Session() session: string,
+    @Session() session: TSession,
     @Ip() ip: string,
     @UserAgent() userAgent: IUserAgent,
     @Origin() origin: string,

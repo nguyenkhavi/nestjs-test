@@ -46,6 +46,7 @@ import { SsoService } from 'src/sso/sso.service';
 import { UserProfileService } from 'src/user-profile/user-profile.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { ISecretShardPayload } from 'src/tenant/tenant.interface';
+import { TSession } from 'src/utils/interface';
 
 @Injectable()
 export class AuthService {
@@ -238,7 +239,7 @@ export class AuthService {
 
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        session: data.accessToken,
+        session: `CUSTOM:${data.accessToken}`,
       });
 
       await this.prismaService.userTenant.create({
@@ -566,7 +567,7 @@ export class AuthService {
     if (!data.data.tenants?.length) {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        session: token,
+        session: `GOOGLE:${token}`,
       });
 
       const tenant = await this.prismaService.userTenant.create({
@@ -650,7 +651,7 @@ export class AuthService {
     if (!data.data.tenants?.length) {
       const testTenant = await this.tenantService.createTestnetTenant({
         timezone: user.timezone,
-        session: token,
+        session: `FACEBOOK:${token}`,
       });
 
       const tenant = await this.prismaService.userTenant.create({
@@ -877,7 +878,7 @@ export class AuthService {
     body: CreateMainnetTenantDto,
     userId: string,
     authorization: string,
-    session: string,
+    session: TSession,
     requestClient: IRequestClient,
   ) {
     const { registerMsg } = body;
