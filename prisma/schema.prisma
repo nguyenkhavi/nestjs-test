@@ -83,6 +83,7 @@ model UserProfile {
 model UserTenant {
   id         String      @id @default(uuid())
   userId     String
+  custonomyUserId  String
   users      User        @relation(fields: [userId], references: [id])
   tenantId   String
   signNodeId String

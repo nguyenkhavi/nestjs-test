@@ -7,6 +7,7 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -247,6 +248,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -575,6 +577,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -659,6 +662,7 @@ export class AuthService {
           userId: user.id,
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
+          custonomyUserId: testTenant.userId,
         },
       });
 
@@ -881,6 +885,8 @@ export class AuthService {
     session: TSession,
     requestClient: IRequestClient,
   ) {
+    const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
+
     const { registerMsg } = body;
     const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
@@ -924,6 +930,8 @@ export class AuthService {
         secret: this.configService.get('jwt.confirmSecret'),
       });
 
+      await this.cacheService.set(LATEST_TOKEN_KEY, token);
+
       await this.mailService.send({
         to: user.email,
         from: 'huy.pham@spiritlabs.co',
@@ -947,6 +955,7 @@ export class AuthService {
           tenantId: mainnetTenant.tenantId,
           env: EEnvironment.MAINNET,
           method: body.method,
+          custonomyUserId: mainnetTenant.userId,
         },
       });
       return { data: { tenant } };
@@ -955,13 +964,68 @@ export class AuthService {
     }
   }
 
+  async sendActiveBackUpAgain(userId: string, requestClient: IRequestClient) {
+    const user = await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+    });
+    const existTenant = await this.prismaService.userTenant.findFirst({
+      where: {
+        userId,
+        env: EEnvironment.MAINNET,
+      },
+    });
+    if (!existTenant) {
+      throw new NotFoundException(
+        'Cannot find mainnet tenant which match with current user!',
+      );
+    }
+    const payload: ISecretShardPayload = {
+      uid: userId,
+      custonomyUserId: existTenant.custonomyUserId,
+      domain: 'MAIN',
+      tenant: existTenant.tenantId,
+    };
+
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('jwt.confirmSecret'),
+    });
+    const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
+    await this.cacheService.set(LATEST_TOKEN_KEY, token);
+
+    await this.mailService.send({
+      to: user.email,
+      from: 'huy.pham@spiritlabs.co',
+      templateId: 'sendgrid.activeSecretShard',
+      dynamicTemplateData: {
+        urlActiveSecretShard: this.generateActiveSecretShardUrl(
+          requestClient.origin,
+          token,
+        ),
+        browser: formatBrowser(requestClient.userAgent),
+        ipAddress: requestClient.ip,
+        emailWasSentTo: user.email,
+        urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
+        urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+      },
+    });
+  }
+
   async activeMainnetTenant(body: ActiveMainnetTenantDto) {
     const { token } = body;
+
     try {
       const payload: ISecretShardPayload = this.jwtService.verify(token, {
         secret: this.configService.get('jwt.confirmSecret'),
       });
       const { uid } = payload;
+      const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${uid}`;
+
+      const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+      if (latestToken !== token) {
+        throw new BadRequestException();
+      }
       const user = await this.prismaService.user.findFirstOrThrow({
         where: {
           id: uid,

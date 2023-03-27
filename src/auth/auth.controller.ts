@@ -218,6 +218,25 @@ export class AuthController {
     );
   }
 
+  @Post('mainnet-tenant/send-again')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create Mainnet Tenant',
+  })
+  sendActiveBackUpAgain(
+    @Uid() uid: string,
+    @Ip() ip: string,
+    @UserAgent() userAgent: IUserAgent,
+    @Origin() origin: string,
+  ) {
+    return this.authService.sendActiveBackUpAgain(uid, {
+      ip,
+      userAgent,
+      origin,
+    });
+  }
+
   @Post('active-mainnet-tenant')
   @ApiOperation({
     summary: 'Active Mainnet Tenant',
