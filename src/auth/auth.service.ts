@@ -899,7 +899,6 @@ export class AuthService {
     }
 
     const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
-
     const { registerMsg } = body;
     const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
@@ -913,7 +912,7 @@ export class AuthService {
       },
     });
     if (existTenant) {
-      throw new ConflictException('User has been created Mainnet already');
+      return this.sendActiveBackUpAgain(userId, requestClient);
     }
 
     const token = authorization.split(' ')[1];
@@ -1024,6 +1023,7 @@ export class AuthService {
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
     });
+    return { data: { tenant: existTenant } };
   }
 
   async activeMainnetTenant(body: ActiveMainnetTenantDto) {

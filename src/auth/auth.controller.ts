@@ -222,7 +222,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Create Mainnet Tenant',
+    summary: 'Resend email Active & Back-Up',
   })
   sendActiveBackUpAgain(
     @Uid() uid: string,
