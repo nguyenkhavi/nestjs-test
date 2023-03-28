@@ -32,7 +32,7 @@ export class ProxyController {
 
   @Get('mainnet/branding-preview')
   @ApiOperation({
-    summary: `Get Test Nest Preview`,
+    summary: `Get Mainnet Branding Preview`,
   })
   async reverseMainnetBrandingPreview(
     @Query() query: GetPreviewDto,
@@ -52,7 +52,7 @@ export class ProxyController {
   }
   @Get('testnet/branding-preview')
   @ApiOperation({
-    summary: `Get Test Nest Preview`,
+    summary: `Get Testnet Branding`,
   })
   async reverseTestnetBrandingPreview(
     @Query() query: GetPreviewDto,
