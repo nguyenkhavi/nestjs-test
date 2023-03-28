@@ -47,7 +47,7 @@ export class ProxyController {
         params: query,
       }),
     );
-    res.send(data);
+    res.type('html').send(data);
     return {};
   }
   @Get('testnet/branding-preview')
@@ -66,7 +66,7 @@ export class ProxyController {
         params: query,
       }),
     );
-    res.send(data);
+    res.type('html').send(data);
     return {};
   }
 
