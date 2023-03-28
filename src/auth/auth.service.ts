@@ -954,7 +954,7 @@ export class AuthService {
         secret: this.configService.get('jwt.confirmSecret'),
       });
 
-      await this.cacheService.set(LATEST_TOKEN_KEY, token);
+      await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
 
       await this.mailService.send({
         to: user.email,
@@ -1021,7 +1021,7 @@ export class AuthService {
     const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
     console.log(`sendActiveBackUpAgain::LATEST_TOKEN_KEY::${LATEST_TOKEN_KEY}`);
 
-    await this.cacheService.set(LATEST_TOKEN_KEY, token);
+    await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
 
     console.log(`sendActiveBackUpAgain::token::${token}`);
 
