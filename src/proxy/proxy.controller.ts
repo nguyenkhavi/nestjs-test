@@ -2,11 +2,13 @@ import {
   All,
   Body,
   Controller,
+  Get,
   Head,
   InternalServerErrorException,
   Param,
   Query,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -17,9 +19,10 @@ import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { firstValueFrom } from 'rxjs';
 import { Authorization, Session } from 'src/utils/decorators';
 import { TSession } from 'src/utils/interface';
+import { GetPreviewDto } from 'src/proxy/proxy.dto';
+import { Response } from 'express';
 
 @Controller('reverse')
-@UseGuards(JwtAuthGuard)
 @ApiTags('Reverse Proxy')
 export class ProxyController {
   constructor(
@@ -27,7 +30,48 @@ export class ProxyController {
     private readonly configService: ConfigService,
   ) {}
 
+  @Get('mainnet/branding-preview')
+  @ApiOperation({
+    summary: `Get Test Nest Preview`,
+  })
+  async reverseMainnetBrandingPreview(
+    @Query() query: GetPreviewDto,
+    @Res() res: Response,
+  ) {
+    const { data } = await firstValueFrom(
+      this.httpService.request({
+        baseURL: this.configService.get('proxy.mainnetUrl'),
+        method: 'GET',
+        url: 'v0/community/branding_preview',
+
+        params: query,
+      }),
+    );
+    res.send(data);
+    return {};
+  }
+  @Get('testnet/branding-preview')
+  @ApiOperation({
+    summary: `Get Test Nest Preview`,
+  })
+  async reverseTestnetBrandingPreview(
+    @Query() query: GetPreviewDto,
+    @Res() res: Response,
+  ) {
+    const { data } = await firstValueFrom(
+      this.httpService.request({
+        baseURL: this.configService.get('proxy.testnetUrl'),
+        method: 'GET',
+        url: 'v0/community/branding_preview',
+        params: query,
+      }),
+    );
+    res.send(data);
+    return {};
+  }
+
   @All('mainnet/*')
+  @UseGuards(JwtAuthGuard)
   async reverseMainnet(
     @Request() req: IncomingMessage,
     @Query() query,
@@ -62,6 +106,7 @@ export class ProxyController {
   }
 
   @All('testnet/*')
+  @UseGuards(JwtAuthGuard)
   async reverseTestnet(
     @Request() req: IncomingMessage,
     @Query() query,
@@ -103,6 +148,7 @@ export class ProxyController {
     description:
       'Example: http://127.0.0.1:8000/api/reverse/mainnet/v0/EL_s4eu/dau_du/projects/326f6e8b-9248-424c-9cce-dfec1b8b789b',
   })
+  @UseGuards(JwtAuthGuard)
   fakeMainnetFn() {
     return { data: true };
   }
@@ -112,6 +158,7 @@ export class ProxyController {
     description:
       'Example: http://127.0.0.1:8000/api/reverse/testnet/v0/EL_s4eu/dau_du/projects/326f6e8b-9248-424c-9cce-dfec1b8b789b',
   })
+  @UseGuards(JwtAuthGuard)
   fakeTestnetFn() {
     return { data: true };
   }
