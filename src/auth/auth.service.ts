@@ -1019,6 +1019,8 @@ export class AuthService {
       secret: this.configService.get('jwt.confirmSecret'),
     });
     const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
+    console.log(`sendActiveBackUpAgain::LATEST_TOKEN_KEY::${LATEST_TOKEN_KEY}`);
+
     await this.cacheService.set(LATEST_TOKEN_KEY, token);
 
     console.log(`sendActiveBackUpAgain::token::${token}`);
@@ -1049,9 +1051,11 @@ export class AuthService {
       const payload: ISecretShardPayload = this.jwtService.verify(token, {
         secret: this.configService.get('jwt.confirmSecret'),
       });
+      console.log(`activeMainnetTenant::payload::${JSON.stringify(payload)}`);
+
       const { uid } = payload;
       const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${uid}`;
-
+      console.log(`activeMainnetTenant::LATEST_TOKEN_KEY::${LATEST_TOKEN_KEY}`);
       const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
       console.log(`activeMainnetTenant::latestToken::${latestToken}`);
       console.log(`activeMainnetTenant::token::${token}`);
