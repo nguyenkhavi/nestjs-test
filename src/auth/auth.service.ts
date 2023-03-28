@@ -1021,6 +1021,8 @@ export class AuthService {
     const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${userId}`;
     await this.cacheService.set(LATEST_TOKEN_KEY, token);
 
+    console.log(`sendActiveBackUpAgain::token::${token}`);
+
     await this.mailService.send({
       to: user.email,
       from: 'huy.pham@spiritlabs.co',
@@ -1037,14 +1039,6 @@ export class AuthService {
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
     });
-    await this.prismaService.userTenant.update({
-      where: {
-        id: existTenant.id,
-      },
-      data: {
-        status: ETenantStatus.INACTIVE,
-      },
-    });
     return { data: { tenant: existTenant } };
   }
 
@@ -1059,12 +1053,22 @@ export class AuthService {
       const LATEST_TOKEN_KEY = `latest-active-backup-secret-token:${uid}`;
 
       const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+      console.log(`activeMainnetTenant::latestToken::${latestToken}`);
+      console.log(`activeMainnetTenant::token::${token}`);
       if (latestToken !== token) {
         throw new BadRequestException();
       }
       const user = await this.prismaService.user.findFirstOrThrow({
         where: {
           id: uid,
+        },
+      });
+      const userTenant = await this.prismaService.userTenant.findFirstOrThrow({
+        where: {
+          id: uid,
+          custonomyUserId: payload.custonomyUserId,
+          env: EEnvironment.MAINNET,
+          status: ETenantStatus.INACTIVE,
         },
       });
       const jwtPayload: JWTPayload = {
@@ -1083,6 +1087,15 @@ export class AuthService {
         payload.custonomyUserId,
       );
       await this.cacheService.del(LATEST_TOKEN_KEY);
+
+      await this.prismaService.userTenant.update({
+        where: {
+          id: userTenant.id,
+        },
+        data: {
+          status: ETenantStatus.ACTIVE,
+        },
+      });
 
       return { data: activeResult };
     } catch (e) {

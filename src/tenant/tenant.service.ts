@@ -94,6 +94,8 @@ export class TenantService {
     session: string,
     custonomyUserId: string,
   ) {
+    console.log({ tenant, domain, session, custonomyUserId });
+
     const { data } = await firstValueFrom(
       this.httpService.request({
         baseURL: this.configService.get('proxy.mainnetUrl'),
@@ -111,6 +113,7 @@ export class TenantService {
         },
       }),
     );
+    console.log({ data });
 
     return data;
   }
