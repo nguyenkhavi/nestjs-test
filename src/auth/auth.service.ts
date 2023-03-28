@@ -39,7 +39,12 @@ import {
   _30MIN_MILLISECONDS_,
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
-import { EEnviroment as EEnvironment, EUserStatus, User } from '@prisma/client';
+import {
+  EEnviroment as EEnvironment,
+  ETenantStatus,
+  EUserStatus,
+  User,
+} from '@prisma/client';
 import { MfaService } from 'src/mfa/mfa.service';
 import { MailService } from 'src/mail/mail.service';
 import { formatBrowser, generateKey } from 'src/utils/fn';
@@ -249,6 +254,7 @@ export class AuthService {
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
+          status: ETenantStatus.ACTIVE,
         },
       });
 
@@ -582,6 +588,7 @@ export class AuthService {
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
+          status: ETenantStatus.ACTIVE,
         },
       });
 
@@ -667,6 +674,7 @@ export class AuthService {
           signNodeId: testTenant.signNodeId,
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
+          status: ETenantStatus.ACTIVE,
         },
       });
 
@@ -835,7 +843,11 @@ export class AuthService {
         id,
       },
       include: {
-        tenants: true,
+        tenants: {
+          where: {
+            status: ETenantStatus.ACTIVE,
+          },
+        },
         profile: true,
       },
     });
@@ -968,6 +980,7 @@ export class AuthService {
           env: EEnvironment.MAINNET,
           method: body.method,
           custonomyUserId: mainnetTenant.userId,
+          status: ETenantStatus.INACTIVE,
         },
       });
       await this.cacheService.del(LATEST_PASSWORD_VERIFY_TOKEN_KEY);
@@ -987,6 +1000,7 @@ export class AuthService {
       where: {
         userId,
         env: EEnvironment.MAINNET,
+        status: ETenantStatus.INACTIVE,
       },
     });
     if (!existTenant) {
@@ -1021,6 +1035,14 @@ export class AuthService {
         emailWasSentTo: user.email,
         urlContactUs: this.configService.get('sendgrid.contactUsUrl'),
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
+      },
+    });
+    await this.prismaService.userTenant.update({
+      where: {
+        id: existTenant.id,
+      },
+      data: {
+        status: ETenantStatus.INACTIVE,
       },
     });
     return { data: { tenant: existTenant } };

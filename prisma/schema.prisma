@@ -29,6 +29,11 @@ enum ERequestStatus {
   ERROR
 }
 
+enum ETenantStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id            String       @id @default(uuid())
   email         String      @db.VarChar(255)
@@ -88,6 +93,7 @@ model UserTenant {
   tenantId   String
   signNodeId String
   env        EEnviroment @default(TESTNET)
+  status     ETenantStatus
   method     EMethod?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
