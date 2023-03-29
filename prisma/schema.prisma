@@ -94,7 +94,7 @@ model UserTenant {
   signNodeId String
   env        EEnviroment @default(TESTNET)
   status     ETenantStatus
-  method     EMethod?
+  method     EMethod
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 

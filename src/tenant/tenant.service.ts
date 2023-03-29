@@ -18,18 +18,14 @@ export class TenantService {
 
   generateHMACSignature(
     body: ICreateTenantBody,
+    secret: string,
     method = 'POST',
     path = 'v0/tenants',
   ) {
     const time = Date.now().toString();
-    const digest = generate(
-      this.configService.get('app.hmacSecretKey'),
-      'sha512',
-      time,
-      method,
-      path,
-      body,
-    ).digest('hex');
+    const digest = generate(secret, 'sha512', time, method, path, body).digest(
+      'hex',
+    );
 
     const hmac = `HMAC ${time}:${digest}`;
     return hmac;
@@ -50,7 +46,10 @@ export class TenantService {
         url: 'v0/tenants',
         headers: {
           'api-key': this.configService.get('proxy.testnetApiKey'),
-          Authorization: this.generateHMACSignature(body),
+          Authorization: this.generateHMACSignature(
+            body,
+            this.configService.getOrThrow('proxy.testnetHmacSecretKey'),
+          ),
         },
         data: body,
       }),
@@ -133,7 +132,10 @@ export class TenantService {
         url: 'v0/tenants',
         headers: {
           'api-key': this.configService.get('proxy.mainnetApiKey'),
-          Authorization: this.generateHMACSignature(body),
+          Authorization: this.generateHMACSignature(
+            body,
+            this.configService.getOrThrow('proxy.mainnetHmacSecretKey'),
+          ),
         },
         data: body,
       }),

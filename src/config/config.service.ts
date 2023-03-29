@@ -28,7 +28,6 @@ export const appConfig = registerAs('app', () => ({
   apiPrefix: process.env.API_PREFIX || 'api',
   throttleTTL: process.env.THROTTLE_TTL || 60,
   throttleLimit: process.env.THROTTLE_LIMIT || 30,
-  hmacSecretKey: process.env.HMAC_SECRET_KEY,
 }));
 
 export const sendgridConfig = registerAs('sendgrid', () => ({
@@ -65,6 +64,8 @@ export const proxyConfig = registerAs('proxy', () => ({
   testnetUrl: process.env.TESTNET_URL,
   testnetApiKey: process.env.TESTNET_API_KEY,
   mainnetApiKey: process.env.MAINNET_API_KEY,
+  testnetHmacSecretKey: process.env.TESTNET_HMAC_SECRET_KEY,
+  mainnetHmacSecretKey: process.env.MAINNET_HMAC_SECRET_KEY,
 }));
 
 export const appConfigs = [
