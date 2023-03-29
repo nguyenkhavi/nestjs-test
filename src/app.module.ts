@@ -16,6 +16,8 @@ import { TenantModule } from './tenant/tenant.module';
 import { ResetKeyRequestModule } from './reset-key-request/reset-key-request.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CustonomyService } from './custonomy/custonomy.service';
+import { CustonomyModule } from './custonomy/custonomy.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,6 +44,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ProxyModule,
     TenantModule,
     ResetKeyRequestModule,
+    CustonomyModule,
   ],
   controllers: [AppController],
   providers: [

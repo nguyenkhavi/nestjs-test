@@ -54,6 +54,7 @@ import { UserProfileService } from 'src/user-profile/user-profile.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { ISecretShardPayload } from 'src/tenant/tenant.interface';
 import { TSession } from 'src/utils/interface';
+import { CustonomyService } from 'src/custonomy/custonomy.service';
 
 @Injectable()
 export class AuthService {
@@ -61,6 +62,8 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
+    private readonly custonomyService: CustonomyService,
+
     private readonly ssoService: SsoService,
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
@@ -244,10 +247,13 @@ export class AuthService {
 
       const data = await this.generateAuthorizedResponse(updated);
 
-      const testTenant = await this.tenantService.createTestnetTenant({
-        timezone: user.timezone,
-        session: `CUSTOM:${data.accessToken}`,
-      });
+      const testTenant = await this.custonomyService.createTenant(
+        EEnvironment.TESTNET,
+        {
+          timezone: user.timezone,
+          session: `CUSTOM:${data.accessToken}`,
+        },
+      );
 
       const tenant = await this.prismaService.userTenant.create({
         data: {
@@ -579,10 +585,13 @@ export class AuthService {
     const data = await this.generateAuthorizedResponse(user);
 
     if (!data.data.tenants?.length) {
-      const testTenant = await this.tenantService.createTestnetTenant({
-        timezone: user.timezone,
-        session: `GOOGLE:${token}`,
-      });
+      const testTenant = await this.custonomyService.createTenant(
+        EEnvironment.TESTNET,
+        {
+          timezone: user.timezone,
+          session: `GOOGLE:${token}`,
+        },
+      );
 
       const tenant = await this.prismaService.userTenant.create({
         data: {
@@ -666,10 +675,13 @@ export class AuthService {
     const data = await this.generateAuthorizedResponse(user);
 
     if (!data.data.tenants?.length) {
-      const testTenant = await this.tenantService.createTestnetTenant({
-        timezone: user.timezone,
-        session: `FACEBOOK:${token}`,
-      });
+      const testTenant = await this.custonomyService.createTenant(
+        EEnvironment.TESTNET,
+        {
+          timezone: user.timezone,
+          session: `FACEBOOK:${token}`,
+        },
+      );
 
       const tenant = await this.prismaService.userTenant.create({
         data: {
@@ -934,12 +946,15 @@ export class AuthService {
 
     const token = authorization.split(' ')[1];
 
-    const mainnetTenant = await this.tenantService.createMainnetTenant({
-      timezone: user.timezone,
-      session,
-    });
+    const mainnetTenant = await this.custonomyService.createTenant(
+      EEnvironment.MAINNET,
+      {
+        timezone: user.timezone,
+        session,
+      },
+    );
 
-    const updateResult = await this.tenantService.updateRegisterMessage(
+    const updateResult = await this.custonomyService.updateRegisterMessage(
       mainnetTenant.tenantId,
       'MAIN',
       token,
@@ -1083,7 +1098,7 @@ export class AuthService {
         expiresIn: this.configService.get('jwt.accessExpires'),
       });
 
-      const activeResult = await this.tenantService.activeSecretShard(
+      const activeResult = await this.custonomyService.activeSecretShard(
         payload.tenant,
         payload.domain,
         session,

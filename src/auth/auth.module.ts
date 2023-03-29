@@ -1,6 +1,7 @@
 import { CacheModule, forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from 'src/auth/jwt/jwt.strategy';
+import { CustonomyModule } from 'src/custonomy/custonomy.module';
 import { MailModule } from 'src/mail/mail.module';
 import { MfaModule } from 'src/mfa/mfa.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
@@ -20,6 +21,7 @@ import { AuthService } from './auth.service';
     forwardRef(() => UserProfileModule),
     forwardRef(() => MfaModule),
     TenantModule,
+    CustonomyModule,
   ],
 
   controllers: [AuthController],
