@@ -41,6 +41,7 @@ import {
 } from 'src/utils/constants';
 import {
   EEnviroment as EEnvironment,
+  EMethod,
   ETenantStatus,
   EUserStatus,
   User,
@@ -255,6 +256,7 @@ export class AuthService {
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
           status: ETenantStatus.ACTIVE,
+          method: EMethod.AUTO_GENERATE,
         },
       });
 
@@ -589,6 +591,7 @@ export class AuthService {
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
           status: ETenantStatus.ACTIVE,
+          method: EMethod.AUTO_GENERATE,
         },
       });
 
@@ -675,6 +678,7 @@ export class AuthService {
           tenantId: testTenant.tenantId,
           custonomyUserId: testTenant.userId,
           status: ETenantStatus.ACTIVE,
+          method: EMethod.AUTO_GENERATE,
         },
       });
 
@@ -718,15 +722,16 @@ export class AuthService {
 
   async verifyPassword(uid: string, body: VerifyPasswordDto) {
     const { mfaCode, password } = body;
-    const user = await this.prismaService.user.findFirstOrThrow({
+    const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
         id: uid,
-        googleUid: null,
-        facebookUid: null,
       },
     });
 
-    const passwordMatching = await bcrypt.compare(password, user.password);
+    const isSSO = !!user.googleUid || !!user.facebookUid;
+    const passwordMatching = isSSO
+      ? true
+      : await bcrypt.compare(password, user.password);
     if (!passwordMatching || !user) {
       throw new UnauthorizedException('Incorrect password!');
     }
