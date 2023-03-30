@@ -925,6 +925,8 @@ export class AuthService {
     if (recentlySent) {
       throw new BadRequestException('In waiting time!');
     }
+
+    // Use it to avoid Race Condition
     await this.cacheService.set(
       RECENTLY_SENT_ACTIVE_SHARD_KEY,
       'true',
@@ -1015,7 +1017,11 @@ export class AuthService {
           status: ETenantStatus.INACTIVE,
         },
       });
-
+      await this.cacheService.set(
+        RECENTLY_SENT_ACTIVE_SHARD_KEY,
+        'true',
+        2 * _30S_MILLISECOND_,
+      );
       await this.cacheService.del(LATEST_PASSWORD_VERIFY_TOKEN_KEY);
       return { data: { tenant } };
     } else {
