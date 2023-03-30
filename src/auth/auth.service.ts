@@ -925,6 +925,11 @@ export class AuthService {
     if (recentlySent) {
       throw new BadRequestException('In waiting time!');
     }
+    await this.cacheService.set(
+      RECENTLY_SENT_ACTIVE_SHARD_KEY,
+      'true',
+      2 * _30S_MILLISECOND_,
+    );
 
     const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-verify-password-2fa-token:${userId}`;
 
@@ -1010,11 +1015,6 @@ export class AuthService {
           status: ETenantStatus.INACTIVE,
         },
       });
-      await this.cacheService.set(
-        RECENTLY_SENT_ACTIVE_SHARD_KEY,
-        token,
-        2 * _30S_MILLISECOND_,
-      );
 
       await this.cacheService.del(LATEST_PASSWORD_VERIFY_TOKEN_KEY);
       return { data: { tenant } };
