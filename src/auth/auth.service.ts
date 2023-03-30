@@ -926,13 +926,6 @@ export class AuthService {
       throw new BadRequestException('In waiting time!');
     }
 
-    // Use it to avoid Race Condition
-    await this.cacheService.set(
-      RECENTLY_SENT_ACTIVE_SHARD_KEY,
-      'true',
-      2 * _30S_MILLISECOND_,
-    );
-
     const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-verify-password-2fa-token:${userId}`;
 
     const latestToken = await this.cacheService.get(
@@ -957,6 +950,13 @@ export class AuthService {
     });
     if (existTenant) {
       return this.sendActiveBackUpAgain(userId, requestClient);
+    } else {
+      // Use it to avoid Race Condition
+      await this.cacheService.set(
+        RECENTLY_SENT_ACTIVE_SHARD_KEY,
+        'true',
+        2 * _30S_MILLISECOND_,
+      );
     }
 
     const token = authorization.split(' ')[1];
