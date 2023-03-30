@@ -918,6 +918,14 @@ export class AuthService {
     session: TSession,
     requestClient: IRequestClient,
   ) {
+    const RECENTLY_SENT_ACTIVE_SHARD_KEY = `recently-active-secret-shard-sent:${userId}`;
+    const recentlySent = await this.cacheService.get(
+      RECENTLY_SENT_ACTIVE_SHARD_KEY,
+    );
+    if (recentlySent) {
+      throw new BadRequestException('In waiting time!');
+    }
+
     const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-verify-password-2fa-token:${userId}`;
 
     const latestToken = await this.cacheService.get(
@@ -975,7 +983,6 @@ export class AuthService {
       });
 
       await this.cacheService.set(LATEST_TOKEN_KEY, token, _24H_MILLISECONDS_);
-
       await this.mailService.send({
         to: user.email,
         from: 'huy.pham@spiritlabs.co',
@@ -1003,6 +1010,12 @@ export class AuthService {
           status: ETenantStatus.INACTIVE,
         },
       });
+      await this.cacheService.set(
+        RECENTLY_SENT_ACTIVE_SHARD_KEY,
+        token,
+        2 * _30S_MILLISECOND_,
+      );
+
       await this.cacheService.del(LATEST_PASSWORD_VERIFY_TOKEN_KEY);
       return { data: { tenant } };
     } else {
@@ -1011,6 +1024,13 @@ export class AuthService {
   }
 
   async sendActiveBackUpAgain(userId: string, requestClient: IRequestClient) {
+    const RECENTLY_SENT_ACTIVE_SHARD_KEY = `recently-active-secret-shard-sent:${userId}`;
+    const recentlySent = await this.cacheService.get(
+      RECENTLY_SENT_ACTIVE_SHARD_KEY,
+    );
+    if (recentlySent) {
+      throw new BadRequestException('In waiting time!');
+    }
     const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
         id: userId,
@@ -1058,6 +1078,11 @@ export class AuthService {
         urlTermsOfUse: this.configService.get('sendgrid.termsOfUse'),
       },
     });
+    await this.cacheService.set(
+      RECENTLY_SENT_ACTIVE_SHARD_KEY,
+      token,
+      2 * _30S_MILLISECOND_,
+    );
     return { data: { tenant: existTenant } };
   }
 
@@ -1114,6 +1139,8 @@ export class AuthService {
           status: ETenantStatus.ACTIVE,
         },
       });
+      const RECENTLY_SENT_ACTIVE_SHARD_KEY = `recently-active-secret-shard-sent:${uid}`;
+      await this.cacheService.del(RECENTLY_SENT_ACTIVE_SHARD_KEY);
 
       return { data: activeResult };
     } catch (e) {
