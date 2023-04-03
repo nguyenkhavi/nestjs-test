@@ -6,8 +6,8 @@
 
 In order to run the Proxy Server, you will need to make sure that the following
 dependencies are installed on your system:
-  - node
-  - yarn
+- node
+- yarn
 
 ### Folder structure
 
