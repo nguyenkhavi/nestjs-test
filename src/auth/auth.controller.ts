@@ -5,6 +5,7 @@ import {
   Ip,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -103,11 +104,11 @@ export class AuthController {
     return this.authService.forgotPassword(body, { ip, userAgent, origin });
   }
 
-  @Put('validate-forgot-password-token')
+  @Get('validate-forgot-password-token')
   @ApiOperation({
     summary: 'Validate the token after forgot-password email sent',
   })
-  validateForgotPasswordToken(@Body() body: ValidatePasswordTokenDto) {
+  validateForgotPasswordToken(@Query() body: ValidatePasswordTokenDto) {
     return this.authService.validateForgotPasswordToken(body);
   }
 

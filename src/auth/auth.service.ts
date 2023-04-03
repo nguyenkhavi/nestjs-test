@@ -436,7 +436,7 @@ export class AuthService {
     }
 
     return {
-      valid: true,
+      data: { valid: true },
     };
   }
 
