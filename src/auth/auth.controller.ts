@@ -26,6 +26,7 @@ import {
   SecretShardDto,
   SSODto,
   UserRegisterDto,
+  ValidatePasswordTokenDto,
   VerifyPasswordDto,
 } from 'src/auth/auth.dto';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
@@ -100,6 +101,14 @@ export class AuthController {
     @Origin() origin: string,
   ) {
     return this.authService.forgotPassword(body, { ip, userAgent, origin });
+  }
+
+  @Put('validate-forgot-password-token')
+  @ApiOperation({
+    summary: 'Validate the token after forgot-password email sent',
+  })
+  validateForgotPasswordToken(@Body() body: ValidatePasswordTokenDto) {
+    return this.authService.validateForgotPasswordToken(body);
   }
 
   @Put('put-password')

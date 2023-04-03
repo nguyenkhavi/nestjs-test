@@ -43,6 +43,15 @@ const PutPassword = z
   .merge(ZPassword);
 export class PutPasswordDto extends createZodDto(extendApi(PutPassword)) {}
 
+const ValidatePasswordToken = z.object({
+  token: z.string({
+    required_error: 'Token is required',
+  }),
+});
+export class ValidatePasswordTokenDto extends createZodDto(
+  extendApi(ValidatePasswordToken),
+) {}
+
 const VerifyPassword = z.object({}).merge(ZPassword).merge(ZMFACode);
 export class VerifyPasswordDto extends createZodDto(
   extendApi(VerifyPassword),

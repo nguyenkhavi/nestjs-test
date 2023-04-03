@@ -24,6 +24,7 @@ import {
   SecretShardDto,
   SSODto,
   UserRegisterDto,
+  ValidatePasswordTokenDto,
   VerifyPasswordDto,
 } from 'src/auth/auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -412,6 +413,31 @@ export class AuthService {
     await this.cacheService.del(LATEST_TOKEN_KEY);
 
     return {};
+  }
+
+  async validateForgotPasswordToken(body: ValidatePasswordTokenDto) {
+    const { token } = body;
+
+    const payload: JWTPayload = this.jwtService.verify(token, {
+      secret: this.configService.get('jwt.confirmSecret'),
+    });
+    const { uid } = payload;
+    await this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: uid,
+      },
+    });
+
+    const LATEST_TOKEN_KEY = `latest-forgot-token:${uid}`;
+
+    const latestToken = await this.cacheService.get(LATEST_TOKEN_KEY);
+    if (latestToken !== token) {
+      throw new BadRequestException('Token is expired');
+    }
+
+    return {
+      valid: true,
+    };
   }
 
   private async generateAuthorizedResponse(user: User) {
