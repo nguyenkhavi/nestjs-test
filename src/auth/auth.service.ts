@@ -120,7 +120,7 @@ export class AuthService {
     // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
     if (recentlySent) {
-      throw new BadRequestException('In waiting time!');
+      throw new BadRequestException('Please wait 30s before trying again!');
     } else {
       const payload: JWTPayload = {
         uid,
@@ -303,7 +303,7 @@ export class AuthService {
     // const sentCount: number = await this.cacheService.get(CACHE_KEY);
     const recentlySent = await this.cacheService.get(RECENTLY_SENT_KEY);
     if (recentlySent) {
-      throw new BadRequestException('In waiting time!');
+      throw new BadRequestException('Please wait 30s before trying again!');
     } else {
       const payload: JWTPayload = {
         uid,
@@ -949,7 +949,7 @@ export class AuthService {
       RECENTLY_SENT_ACTIVE_SHARD_KEY,
     );
     if (recentlySent) {
-      throw new BadRequestException('In waiting time!');
+      throw new BadRequestException('Please wait 30s before trying again!');
     }
 
     const LATEST_PASSWORD_VERIFY_TOKEN_KEY = `latest-verify-password-2fa-token:${userId}`;
@@ -1061,7 +1061,7 @@ export class AuthService {
       RECENTLY_SENT_ACTIVE_SHARD_KEY,
     );
     if (recentlySent) {
-      throw new BadRequestException('In waiting time!');
+      throw new BadRequestException('Please wait 30s before trying again!');
     }
     const user = await this.prismaService.user.findUniqueOrThrow({
       where: {
