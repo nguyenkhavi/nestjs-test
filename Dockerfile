@@ -16,7 +16,7 @@ RUN \
 
  ##### BUILDER
 
-FROM --platform=linux/amd64 node:16-alpine3.17 AS builder
+FROM node:16-alpine3.17 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -32,7 +32,7 @@ RUN \
 
 
 ##### RUNNER
-FROM --platform=linux/amd64 node:16-alpine3.17 AS runner
+FROM node:16-alpine3.17 AS runner
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
