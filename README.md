@@ -6,6 +6,7 @@
 
 In order to run the Proxy Server, you will need to make sure that the following
 dependencies are installed on your system:
+
 - node
 - yarn
 
@@ -23,9 +24,18 @@ web3asy-proxy/   # Root directory.
 ```
 
 ### Step to run
+
 - Create `.env` which re-define all variables exists in `.env.example`
 - Run `yarn prisma:generate`
 - Run `yarn start:dev`
 
-```
 ## Deployment
+
+Pull the latest code and make sure `.env` file is existed. Then follow these steps:
+
+1. Build image with command: `docker build -t web3asy-proxy:latest .`
+2. Run docker container: `docker run -p 3000:3000 web3asy-proxy:lastest`
+
+Check the current server is running on [http://localhost:3000](http://localhost:3000)
+
+Note: you can check docker container logs with command: `docker logs -f CONTAINER_ID`
