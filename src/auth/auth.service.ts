@@ -488,6 +488,8 @@ export class AuthService {
       where: {
         email,
         emailVerified: true,
+        facebookUid: null,
+        googleUid: null,
       },
       include: {
         tenants: true,
