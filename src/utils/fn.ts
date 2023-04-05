@@ -20,7 +20,7 @@ export function generateHMACSignature(
   body: ICreateTenantBody,
   secret: string,
   method = 'POST',
-  path = 'v0/tenants',
+  path = '/v0/tenants',
 ) {
   const time = Date.now().toString();
   const digest = generate(secret, 'sha512', time, method, path, body).digest(
