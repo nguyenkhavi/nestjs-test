@@ -87,13 +87,25 @@ export class UserProfileService {
     if (avatar) {
       data['avatar'] = avatar;
     }
-    const updated = await this.prismaService.userProfile.update({
-      where: {
-        userId: id,
-      },
-      data,
-    });
-    return { data: updated };
+    try {
+      const updated = await this.prismaService.userProfile.update({
+        where: {
+          userId: id,
+        },
+        data,
+      });
+      await this.cacheUserProfile(id, updated);
+      return { data: updated };
+    } catch (e) {
+      const created = await this.prismaService.userProfile.create({
+        data: {
+          ...data,
+          userId: id,
+        },
+      });
+      await this.cacheUserProfile(id, created);
+      return { data: created };
+    }
   }
 
   // findAll() {
