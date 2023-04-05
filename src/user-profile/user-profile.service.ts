@@ -5,6 +5,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { UpdateUserProfileDto } from 'src/user-profile/user-profile.dto';
+import { _99YEAR_MILLISECONDS_ } from 'src/utils/constants';
 
 @Injectable()
 export class UserProfileService {
@@ -20,7 +21,7 @@ export class UserProfileService {
   async cacheUserProfile(id: string, userProfile: UserProfile) {
     const KEY = `ha-cache:${id}`;
     const VALUE = JSON.stringify(userProfile);
-    await this.cacheService.set(KEY, VALUE);
+    await this.cacheService.set(KEY, VALUE, _99YEAR_MILLISECONDS_);
   }
 
   async getCacheUserProfile(id: string) {

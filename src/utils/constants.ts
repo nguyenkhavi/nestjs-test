@@ -1,4 +1,6 @@
 export const _24H_MILLISECONDS_ = 24 * 60 * 60 * 1000;
+export const _99YEAR_MILLISECONDS_ = 99 * 12 * 30 * 24 * 60 * 60 * 1000;
+
 export const _30MIN_MILLISECONDS_ = 30 * 60 * 1000;
 export const _5MIN_MILLISECONDS_ = 5 * 60 * 1000;
 export const _30S_MILLISECOND_ = 30 * 1000;

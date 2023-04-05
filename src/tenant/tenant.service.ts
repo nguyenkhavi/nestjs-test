@@ -3,6 +3,7 @@ import { EEnviroment, UserTenant } from '@prisma/client';
 import { Cache } from 'cache-manager';
 import { ConfigService } from 'src/config/config.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { _99YEAR_MILLISECONDS_ } from 'src/utils/constants';
 @Injectable()
 export class TenantService {
   constructor(
@@ -15,7 +16,7 @@ export class TenantService {
   async cacheTenant(id: string, env: EEnviroment, tenant: UserTenant) {
     const KEY = `ha-cache-tenant:${env}:${id}`;
     const VALUE = JSON.stringify(tenant);
-    await this.cacheService.set(KEY, VALUE);
+    await this.cacheService.set(KEY, VALUE, _99YEAR_MILLISECONDS_);
   }
 
   async getCacheTenant(id: string, env: EEnviroment) {
