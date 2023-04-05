@@ -8,6 +8,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -59,13 +60,12 @@ import { TSession } from 'src/utils/interface';
 import { CustonomyService } from 'src/custonomy/custonomy.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly custonomyService: CustonomyService,
-
     private readonly ssoService: SsoService,
     private readonly jwtService: JwtService,
     @Inject(forwardRef(() => MfaService))
@@ -77,6 +77,29 @@ export class AuthService {
     @Inject(CACHE_MANAGER)
     private readonly cacheService: Cache,
   ) {}
+
+  async onModuleInit() {
+    const ssoUsers = await this.prismaService.user.findMany({
+      where: {
+        NOT: {
+          googleUid: null,
+          facebookUid: null,
+        },
+      },
+      include: {
+        tenants: true,
+        profile: true,
+      },
+    });
+    for (const user of ssoUsers) {
+      await this.userProfileService.cacheUserProfile(user.id, user.profile);
+      if (user.tenants?.length) {
+        for (const tenant of user.tenants) {
+          await this.tenantService.cacheTenant(user.id, tenant.env, tenant);
+        }
+      }
+    }
+  }
 
   async verifyToken(id: string) {
     const user = await this.findOrThrow(id);

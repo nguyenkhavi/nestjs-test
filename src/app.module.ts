@@ -1,4 +1,4 @@
-import { Module, UseGuards } from '@nestjs/common';
+import { CacheModule, Module, UseGuards } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -46,6 +46,7 @@ import { KmsModule } from './kms/kms.module';
     ResetKeyRequestModule,
     CustonomyModule,
     KmsModule,
+    CacheModule.register(),
   ],
   controllers: [AppController],
   providers: [
