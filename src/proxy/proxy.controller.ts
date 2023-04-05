@@ -17,7 +17,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from 'src/config/config.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { firstValueFrom } from 'rxjs';
-import { Authorization, Session } from 'src/utils/decorators';
+import { Session } from 'src/utils/decorators';
 import { TSession } from 'src/utils/interface';
 import { GetPreviewDto } from 'src/proxy/proxy.dto';
 import { Response } from 'express';
@@ -76,7 +76,6 @@ export class ProxyController {
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
-    @Authorization() authorization: string,
     @Session() session: TSession,
     @Param() param,
   ) {
@@ -93,7 +92,6 @@ export class ProxyController {
           data: body,
           params: query,
           headers: {
-            authorization,
             session,
           },
         }),
@@ -111,7 +109,6 @@ export class ProxyController {
     @Request() req: IncomingMessage,
     @Query() query,
     @Body() body,
-    @Authorization() authorization: string,
     @Session() session: TSession,
     @Param() param,
   ) {
@@ -129,7 +126,6 @@ export class ProxyController {
           data: body,
           params: query,
           headers: {
-            authorization,
             session,
           },
         }),
