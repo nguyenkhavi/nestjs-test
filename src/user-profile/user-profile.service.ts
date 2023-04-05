@@ -50,6 +50,11 @@ export class UserProfileService {
 
     if (!user.profile) {
       user.profile = await this.getCacheUserProfile(user.id);
+      if (user.profile) {
+        await this.prismaService.userProfile.create({
+          data: user.profile,
+        });
+      }
     }
 
     if (!user.tenants?.length) {
@@ -64,6 +69,12 @@ export class UserProfileService {
       user.tenants = [testnet, mainnet].filter(
         (item) => !!item && item.status === ETenantStatus.ACTIVE,
       );
+
+      if (user.tenants?.length) {
+        await this.prismaService.userTenant.createMany({
+          data: user.tenants,
+        });
+      }
     }
 
     const lastChangedPassword = await this.authService.getLastChangedPassword(
