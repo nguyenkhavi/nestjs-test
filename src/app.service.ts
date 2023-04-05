@@ -15,10 +15,10 @@ export class AppService {
     const keys = await this.cacheService.store.keys();
 
     //Loop through keys and get data
-    const allData: { [key: string]: any } = {};
+    const data: { [key: string]: any } = {};
     for (const key of keys) {
-      allData[key] = await this.cacheService.get(key);
+      data[key] = await this.cacheService.get(key);
     }
-    return allData;
+    return { data };
   }
 }
