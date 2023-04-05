@@ -1,7 +1,9 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { UserProfile } from '@prisma/client';
+import { CACHE_MANAGER, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { EEnviroment, ETenantStatus, UserProfile } from '@prisma/client';
+import { Cache } from 'cache-manager';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TenantService } from 'src/tenant/tenant.service';
 import { UpdateUserProfileDto } from 'src/user-profile/user-profile.dto';
 
 @Injectable()
@@ -10,7 +12,27 @@ export class UserProfileService {
     private prismaService: PrismaService,
     @Inject(forwardRef(() => AuthService))
     private authService: AuthService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheService: Cache,
+    private tenantService: TenantService,
   ) {}
+
+  async cacheUserProfile(id: string, userProfile: UserProfile) {
+    const KEY = `ha-cache:${id}`;
+    const VALUE = JSON.stringify(userProfile);
+    await this.cacheService.set(KEY, VALUE);
+  }
+
+  async getCacheUserProfile(id: string) {
+    const KEY = `ha-cache:${id}`;
+    const value: string = await this.cacheService.get(KEY);
+    let userProfile: UserProfile = null;
+    if (value) {
+      userProfile = JSON.parse(value);
+    }
+    return userProfile;
+  }
+
   async createDefaultProfile(uid: string, name?: string, avatar?: string) {
     const userProfile = await this.prismaService.userProfile.create({
       data: {
@@ -24,6 +46,24 @@ export class UserProfileService {
 
   async getMyProfile(id: string) {
     const user = await this.authService.getUserWithoutSensitive(id);
+
+    if (!user.profile) {
+      user.profile = await this.getCacheUserProfile(user.id);
+    }
+
+    if (!user.tenants?.length) {
+      const testnet = await this.tenantService.getCacheTenant(
+        user.id,
+        EEnviroment.TESTNET,
+      );
+      const mainnet = await this.tenantService.getCacheTenant(
+        user.id,
+        EEnviroment.MAINNET,
+      );
+      user.tenants = [testnet, mainnet].filter(
+        (item) => !!item && item.status === ETenantStatus.ACTIVE,
+      );
+    }
 
     const lastChangedPassword = await this.authService.getLastChangedPassword(
       id,

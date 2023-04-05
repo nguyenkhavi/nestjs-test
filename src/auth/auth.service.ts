@@ -41,6 +41,7 @@ import {
   _30S_MILLISECOND_,
 } from 'src/utils/constants';
 import {
+  EEnviroment,
   EEnviroment as EEnvironment,
   EMethod,
   ETenantStatus,
@@ -607,11 +608,12 @@ export class AuthService {
           timezone,
         },
       });
-      await this.userProfileService.createDefaultProfile(
+      const userProfile = await this.userProfileService.createDefaultProfile(
         user.id,
         profile.name,
         profile.avatar,
       );
+      await this.userProfileService.cacheUserProfile(user.id, userProfile);
     }
 
     const data = await this.generateAuthorizedResponse(user);
@@ -635,6 +637,12 @@ export class AuthService {
           method: EMethod.AUTO_GENERATE,
         },
       });
+
+      await this.tenantService.cacheTenant(
+        user.id,
+        EEnviroment.TESTNET,
+        tenant,
+      );
 
       data.data.tenants = [tenant];
     }
@@ -697,11 +705,12 @@ export class AuthService {
           timezone,
         },
       });
-      await this.userProfileService.createDefaultProfile(
+      const userProfile = await this.userProfileService.createDefaultProfile(
         user.id,
         profile.name,
         profile.avatar,
       );
+      await this.userProfileService.cacheUserProfile(user.id, userProfile);
     }
 
     const data = await this.generateAuthorizedResponse(user);
@@ -725,6 +734,12 @@ export class AuthService {
           method: EMethod.AUTO_GENERATE,
         },
       });
+
+      await this.tenantService.cacheTenant(
+        user.id,
+        EEnviroment.TESTNET,
+        tenant,
+      );
 
       data.data.tenants = [tenant];
     }
@@ -1055,6 +1070,7 @@ export class AuthService {
           status: ETenantStatus.INACTIVE,
         },
       });
+
       await this.cacheService.set(
         RECENTLY_SENT_ACTIVE_SHARD_KEY,
         'true',
@@ -1175,7 +1191,7 @@ export class AuthService {
       );
       await this.cacheService.del(LATEST_TOKEN_KEY);
 
-      await this.prismaService.userTenant.update({
+      const updatedTenant = await this.prismaService.userTenant.update({
         where: {
           id: userTenant.id,
         },
@@ -1185,6 +1201,15 @@ export class AuthService {
       });
       const RECENTLY_SENT_ACTIVE_SHARD_KEY = `recently-active-secret-shard-sent:${uid}`;
       await this.cacheService.del(RECENTLY_SENT_ACTIVE_SHARD_KEY);
+
+      const isSSO = !!user.googleUid || !!user.facebookUid;
+      if (isSSO) {
+        await this.tenantService.cacheTenant(
+          user.id,
+          EEnviroment.MAINNET,
+          updatedTenant,
+        );
+      }
 
       return { data: activeResult };
     } catch (e) {

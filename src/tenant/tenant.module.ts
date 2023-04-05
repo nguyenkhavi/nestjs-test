@@ -1,10 +1,10 @@
 import { HttpModule } from '@nestjs/axios';
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { TenantService } from './tenant.service';
 
 @Module({
-  imports: [HttpModule, PrismaModule],
+  imports: [HttpModule, PrismaModule, CacheModule.register()],
   providers: [TenantService],
   exports: [TenantService],
 })
