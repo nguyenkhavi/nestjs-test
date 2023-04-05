@@ -98,6 +98,7 @@ export class AuthService implements OnModuleInit {
           await this.tenantService.cacheTenant(user.id, tenant.env, tenant);
         }
       }
+      console.log(`Cache profile vs tenants for user ${user.id} success!`);
     }
   }
 
