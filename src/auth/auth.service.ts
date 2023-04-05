@@ -351,6 +351,7 @@ export class AuthService {
         email,
         googleUid: null,
         facebookUid: null,
+        emailVerified: true,
       },
     });
     const success = await this.sendForgotPasswordEmail(
