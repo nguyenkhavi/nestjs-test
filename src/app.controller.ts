@@ -10,8 +10,8 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('cache-store')
-  getCacheStore() {
-    return this.appService.getCacheStore();
-  }
+  // @Get('cache-store')
+  // getCacheStore() {
+  //   return this.appService.getCacheStore();
+  // }
 }
