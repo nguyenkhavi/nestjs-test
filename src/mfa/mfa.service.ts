@@ -12,6 +12,7 @@ import { _30MIN_MILLISECONDS_ } from 'src/utils/constants';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from 'src/auth/auth.service';
 import { MFAVerifyDto } from 'src/mfa/mfa.dto';
+import { KmsService } from 'src/kms/kms.service';
 
 @Injectable()
 export class MfaService {
@@ -21,10 +22,13 @@ export class MfaService {
     @Inject(CACHE_MANAGER)
     private readonly cacheService: Cache,
     private configService: ConfigService,
+    private kmsService: KmsService,
   ) {}
-  mfaCodeValid(code: string, mfaSecret: string) {
+  async mfaCodeValid(code: string, mfaSecret: string) {
+    const decryptedMfaSecret = await this.kmsService.decrypt(mfaSecret);
+
     return speakeasy.totp.verify({
-      secret: mfaSecret,
+      secret: decryptedMfaSecret,
       encoding: 'base32',
       token: code,
     });
@@ -38,9 +42,11 @@ export class MfaService {
       issuer: this.configService.get('app.name'),
     });
 
+    const encryptedMfaSecret = await this.kmsService.encrypt(secret.base32);
+
     await this.cacheService.set(
       TEMP_MFA_SECRET_KEY,
-      secret.base32,
+      encryptedMfaSecret,
       _30MIN_MILLISECONDS_,
     );
     // await this.authService.enableMFA(uid, secret.base32);
@@ -82,16 +88,16 @@ export class MfaService {
       throw new BadRequestException('MFA Code is expired');
     }
 
-    const mfaCodeMatching = this.mfaCodeValid(mfaCode, currentSecret);
+    const mfaCodeMatching = await this.mfaCodeValid(mfaCode, currentSecret);
 
     if (!mfaCodeMatching) {
       throw new BadRequestException('MFA Code is correct');
     }
-
+    const backUpKey = await this.kmsService.decrypt(currentSecret);
     await this.authService.enableMFA(uid, currentSecret);
     await this.cacheService.del(TEMP_MFA_SECRET_KEY);
     return {
-      data: { success: true, backUpKey: currentSecret },
+      data: { success: true, backUpKey },
       meta: { uid },
     };
   }

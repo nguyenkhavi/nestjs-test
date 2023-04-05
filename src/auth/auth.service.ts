@@ -509,7 +509,10 @@ export class AuthService {
           },
         };
       } else {
-        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+        const mfaValid = await this.mfaService.mfaCodeValid(
+          mfaCode,
+          user.mfaSecret,
+        );
 
         if (!mfaValid) {
           throw new UnauthorizedException('Incorrect credential!');
@@ -578,7 +581,7 @@ export class AuthService {
             },
           };
         } else {
-          const mfaValid = this.mfaService.mfaCodeValid(
+          const mfaValid = await this.mfaService.mfaCodeValid(
             mfaCode,
             user.mfaSecret,
           );
@@ -668,7 +671,7 @@ export class AuthService {
             },
           };
         } else {
-          const mfaValid = this.mfaService.mfaCodeValid(
+          const mfaValid = await this.mfaService.mfaCodeValid(
             mfaCode,
             user.mfaSecret,
           );
@@ -785,7 +788,10 @@ export class AuthService {
           },
         };
       } else {
-        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+        const mfaValid = await this.mfaService.mfaCodeValid(
+          mfaCode,
+          user.mfaSecret,
+        );
 
         if (!mfaValid) {
           throw new UnauthorizedException('Incorrect MFA code!');
@@ -831,7 +837,10 @@ export class AuthService {
           },
         };
       } else {
-        const mfaValid = this.mfaService.mfaCodeValid(mfaCode, user.mfaSecret);
+        const mfaValid = await this.mfaService.mfaCodeValid(
+          mfaCode,
+          user.mfaSecret,
+        );
 
         if (!mfaValid) {
           throw new UnauthorizedException('Incorrect MFA code!');

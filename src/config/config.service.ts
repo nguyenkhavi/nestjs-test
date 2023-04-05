@@ -59,6 +59,13 @@ export const facebookConfig = registerAs('facebook', () => ({
   appSecret: process.env.FB_APP_SECRET,
 }));
 
+export const awsConfig = registerAs('aws', () => ({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+  kmsKeyId: process.env.AWS_KMS_KEY_ID,
+}));
+
 export const proxyConfig = registerAs('proxy', () => ({
   mainnetUrl: process.env.MAINNET_URL,
   testnetUrl: process.env.TESTNET_URL,
@@ -75,6 +82,7 @@ export const appConfigs = [
   googleConfig,
   facebookConfig,
   proxyConfig,
+  awsConfig,
 ];
 
 export class ConfigService extends NestjsConfigService<
@@ -86,6 +94,7 @@ export class ConfigService extends NestjsConfigService<
       typeof googleConfig,
       typeof facebookConfig,
       typeof proxyConfig,
+      typeof awsConfig,
     ]
   >
 > {}

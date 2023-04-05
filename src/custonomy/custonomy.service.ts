@@ -119,7 +119,6 @@ export class CustonomyService {
         },
       }),
     );
-    console.log({ data });
 
     return data;
   }
