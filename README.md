@@ -34,7 +34,7 @@ web3asy-proxy/   # Root directory.
 Pull the latest code and make sure `.env` file is existed. Then follow these steps:
 
 1. Build image with command: `docker build -t web3asy-proxy:latest .`
-2. Run docker container: `docker run -p 3000:3000 web3asy-proxy:lastest`
+2. Run docker container: `docker run -p 3000:3000 web3asy-proxy:latest`
 
 Check the current server is running on [http://localhost:3000](http://localhost:3000)
 
