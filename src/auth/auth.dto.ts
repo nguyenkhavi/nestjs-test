@@ -92,6 +92,16 @@ const SSO = z
   .merge(ZTimezone.required());
 export class SSODto extends createZodDto(extendApi(SSO)) {}
 
+const GoogleSSO = z
+  .object({
+    code: z.string({
+      required_error: 'Code is required',
+    }),
+  })
+  .merge(ZMFACode)
+  .merge(ZTimezone.required());
+export class GoogleSSODto extends createZodDto(extendApi(GoogleSSO)) {}
+
 const SecretShard = z.object({}).merge(ZPassword);
 export class SecretShardDto extends createZodDto(extendApi(SecretShard)) {}
 

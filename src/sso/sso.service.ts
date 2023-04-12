@@ -14,6 +14,7 @@ export class SsoService {
     this.google = new OAuth2Client(
       configService.get('google.clientId'),
       configService.get('google.clientSecret'),
+      'postmessage',
     );
     this.fb = new Facebook({
       appId: configService.get('facebook.appId'),
@@ -22,10 +23,28 @@ export class SsoService {
     });
   }
 
-  async getGoogleProfile(body: SSODto) {
-    const { token } = body;
+  // async getGoogleProfile(body: SSODto) {
+  //   const { token } = body;
+  //   const ticket = await this.google.verifyIdToken({
+  //     idToken: token,
+  //     audience: [this.configService.get('google.clientId')],
+  //   });
+
+  //   const data = ticket.getPayload();
+
+  //   return {
+  //     id: data.sub,
+  //     email: data.email,
+  //     name: data.name,
+  //     avatar: data.picture,
+  //   };
+  // }
+
+  async getGoogleProfileByCode(code: string) {
+    const { tokens } = await this.google.getToken(code);
+
     const ticket = await this.google.verifyIdToken({
-      idToken: token,
+      idToken: tokens.id_token,
       audience: [this.configService.get('google.clientId')],
     });
 
@@ -36,6 +55,7 @@ export class SsoService {
       email: data.email,
       name: data.name,
       avatar: data.picture,
+      token: tokens.id_token,
     };
   }
 

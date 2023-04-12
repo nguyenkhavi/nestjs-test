@@ -18,6 +18,7 @@ import {
   ConfirmEmailDto,
   CreateMainnetTenantDto,
   ForgotPasswordDto,
+  GoogleSSODto,
   LoginDto,
   PutPasswordDto,
   RefreshTokenDto,
@@ -581,15 +582,15 @@ export class AuthService implements OnModuleInit {
     return { data };
   }
 
-  async ssoGoogle(body: SSODto) {
-    const { mfaCode, timezone, token } = body;
-    const profile = await this.ssoService.getGoogleProfile(body);
+  async ssoGoogle(body: GoogleSSODto) {
+    const { mfaCode, timezone, code } = body;
+    const profile = await this.ssoService.getGoogleProfileByCode(code);
 
     if (!profile) {
       throw new BadRequestException('Cannot verify account from SSO Provider');
     }
 
-    const { id: googleUid, email } = profile;
+    const { id: googleUid, email, token } = profile;
 
     let user = await this.prismaService.user.findFirst({
       where: {

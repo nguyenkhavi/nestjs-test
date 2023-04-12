@@ -20,6 +20,7 @@ import {
   ConfirmEmailDto,
   CreateMainnetTenantDto,
   ForgotPasswordDto,
+  GoogleSSODto,
   LoginDto,
   PutPasswordDto,
   RefreshTokenDto,
@@ -162,7 +163,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Credential provided is invalid',
   })
-  ssoGoogle(@Body() body: SSODto) {
+  ssoGoogle(@Body() body: GoogleSSODto) {
     return this.authService.ssoGoogle(body);
   }
 
